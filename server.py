@@ -18,6 +18,6 @@ while True:
     # Establish connection with client.    
     c, (client_host, client_port) = s.accept()
     print 'Got connection from', client_host, client_port
-    c.send('Thank you for connecting')
-    c.send("good bye.")
+    c.send('HTTP/1.0 200 OK\nContent-type: text/html \n\n')
+    c.send("<html><body><h1>Hello world</h1> this is phammin1's Web server</body></html>")
     c.close()
