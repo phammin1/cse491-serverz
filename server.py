@@ -1,4 +1,7 @@
 #!/usr/bin/env python
+# Minh Pham
+# CSE 491
+
 import random
 import socket
 import time
