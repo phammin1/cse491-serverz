@@ -21,3 +21,4 @@ while True:
     c.send('HTTP/1.0 200 OK\r\nContent-Type: text/html\r\n\r\n')
     c.send("<h1>Hello, world</h1> this is yangeunb's Web Server.\n\n")
     c.close()
+# @comment PKM IT works! Good job.
