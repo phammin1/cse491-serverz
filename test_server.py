@@ -178,8 +178,19 @@ def test_404_post():
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
 
-def test_404_get():
+def test_404_fake():
     conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
+                      '<a href="/">Home</a><br></br>' +\
+                     "<h1>Not Found</h1>This is Minh\'s Web server."
+
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+
+def test_404_get():
+    conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
     expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
                       '<a href="/">Home</a><br></br>' +\
                      "<h1>Not Found</h1>This is Minh\'s Web server."

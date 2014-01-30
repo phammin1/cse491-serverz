@@ -9,7 +9,6 @@ from urlparse import urlparse, parse_qs  # credit to Jason Lefler code
 
 
 def main():
-
     s = socket.socket()         # Create a socket object
     host = socket.getfqdn() # Get local machine name
     port = random.randint(8000, 9999)
