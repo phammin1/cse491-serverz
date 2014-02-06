@@ -36,6 +36,8 @@ def test_handle_connection():
                       '<a href="/content">Content</a><br></br>' + \
                       '<a href="/file">File</a><br></br>' + \
                       '<a href="/image">Image</a><br></br>' + \
+                      '<a href="/form">Form</a><br></br>' +\
+                      '<a href="/formPost">Form (Post)</a><br></br>' +\
                       'This is Minh\'s Web server.'
 
     server.handle_connection(conn)
@@ -48,6 +50,7 @@ def test_handle_content():
                       'Content-type: text/html\r\n' + \
                       '\r\n' + \
                       '<h1>Content</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
                       'This is Minh\'s Web server.'
 
     server.handle_connection(conn)
@@ -60,6 +63,7 @@ def test_handle_file():
                       'Content-type: text/html\r\n' + \
                       '\r\n' + \
                       '<h1>File</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
                       'This is Minh\'s Web server.'
 
     server.handle_connection(conn)
@@ -72,7 +76,24 @@ def test_handle_image():
                       'Content-type: text/html\r\n' + \
                       '\r\n' + \
                       '<h1>Image</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
                       'This is Minh\'s Web server.'
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_handle_form():
+    conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
+    expected_return ='HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
+                     "<h1>Form</h1>" + \
+                     "<form action='/submit' method='GET'>" +\
+                     "<input type='text' name='firstname'><br></br>" +\
+                     "<input type='text' name='lastname'><br></br>" +\
+                     "<input type='submit' name='submit'><br></br>" +\
+                     "</form>" +\
+                     '<a href="/">Home</a><br></br>' +\
+                   "This is Minh\'s Web server."
 
     server.handle_connection(conn)
 
@@ -84,9 +105,97 @@ def test_handle_post():
                       'Content-type: text/html\r\n' + \
                       '\r\n' + \
                       '<h1>POST method</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
                       'This is Minh\'s Web server.'
 
     server.handle_connection(conn)
 
     assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-  
+
+def test_get_submit():
+    conn = FakeConnection("GET /submit?firstname=Minh&lastname=Pham&submit=Submit+Query HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 200 OK\r\n' + \
+                      'Content-type: text/html\r\n' + \
+                      '\r\n' + \
+                      '<h1>Hello Minh Pham</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
+                      'This is Minh\'s Web server.'
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_get_submit():
+    conn = FakeConnection("GET /submit HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 200 OK\r\n' + \
+                      'Content-type: text/html\r\n' + \
+                      '\r\n' + \
+                      '<h1>Hello No Name</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
+                      'This is Minh\'s Web server.'
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_post_submit():
+    conn = FakeConnection("POST /submit HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 200 OK\r\n' + \
+                      'Content-type: text/html\r\n' + \
+                      '\r\n' + \
+                      '<h1>(Post) Hello No Name</h1>' + \
+                      '<a href="/">Home</a><br></br>' +\
+                      'This is Minh\'s Web server.'
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+
+def test_post_form():
+    conn = FakeConnection("GET /formPost HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
+                     "<h1>Form Post</h1>" + \
+                     "<form action='/submit' method='POST'>" +\
+                     "<input type='text' name='firstname'><br></br>" +\
+                     "<input type='text' name='lastname'><br></br>" +\
+                     "<input type='submit' name='submit'><br></br>" +\
+                     "</form>" +\
+                     '<a href="/">Home</a><br></br>' +\
+                   "This is Minh\'s Web server."
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)    
+
+def test_404_post():
+    conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
+                      '<a href="/">Home</a><br></br>' +\
+                     "<h1>Not Found</h1>This is Minh\'s Web server."
+
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+
+def test_404_fake():
+    conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
+                      '<a href="/">Home</a><br></br>' +\
+                     "<h1>Not Found</h1>This is Minh\'s Web server."
+
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+
+def test_404_get():
+    conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
+    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
+                      '<a href="/">Home</a><br></br>' +\
+                     "<h1>Not Found</h1>This is Minh\'s Web server."
+
+
+    server.handle_connection(conn)
+
+    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
