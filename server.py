@@ -15,6 +15,9 @@ import StringIO # for string buffer
 # jinja file path
 jinjaTemplateDir = './templates'
 
+# buffer size for conn.recv
+buffSize = 10
+
 def main():
     s = socket.socket()         # Create a socket object
     host = socket.getfqdn() # Get local machine name
@@ -50,7 +53,7 @@ def handle_connection(conn, jEnv):
 
     try:
         while True:
-            reqData += conn.recv(1)
+            reqData += conn.recv(buffSize)
     except Exception, msg:
         signal.alarm(0) # turn off signal
     signal.alarm(0) # just to make sure
