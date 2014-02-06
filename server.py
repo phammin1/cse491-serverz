@@ -9,7 +9,6 @@ from urlparse import urlparse, parse_qs  # credit to Jason Lefler code
 import signal # to control execution time
 import cgi # to parse post data
 import jinja2 # for html template
-from jinja2 import Undefined
 import StringIO # for string buffer
 
 # jinja file path
@@ -58,76 +57,42 @@ def handle_connection(conn, jEnv):
         signal.alarm(0) # turn off signal
     signal.alarm(0) # just to make sure
 
-    reqMethod = reqData.split('\n')[0].split(' ')[0]
-
-    if reqMethod == 'GET':
-        serverResponse = handle_get(jEnv, reqData)
-    elif reqMethod == "POST":
-        serverResponse = handle_post(jEnv, reqData)
-    else:
+    page = getPage(reqData)
+    formFS = createFS(reqData)
+    
+    try:
+        serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
+        serverResponse += jEnv.get_template(page).render(formFS)
+    except jinja2.exceptions.TemplateNotFound:
         serverResponse = error404(jEnv, reqData)
-
+ 
     conn.send(serverResponse)
     conn.close()
 
-def handle_get(jEnv,reqData):
+# Get page name from request data
+def getPage(reqData):
     path = urlparse(reqData.split()[1])[2] # credit to Jason Lefler
-
     path = path.lstrip('/')
     # index page
     if path == '':
         path = 'index'
-
-    # submit page
-    if path == 'submit':
-        return submitGet(jEnv, reqData)
-    
     path += '.html'
-    try:
-        serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
-        serverResponse += jEnv.get_template(path).render()
-    except jinja2.exceptions.TemplateNotFound:
-        serverResponse = error404(jEnv, reqData)
- 
-    return serverResponse
 
-def submitGet(jEnv, reqData):
-    formData = parse_qs(urlparse(reqData.split()[1])[4])# credit to Jason Lefler
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
-    serverResponse += jEnv.get_template('submit.html').render(formData)
-    
-    return serverResponse
-
-def error404(jEnv, reqData):
-    serverResponse = 'HTTP/1.0 404 Not Found\r\n'
-    serverResponse += 'Content-type: text/html\r\n\r\n'
-    serverResponse += jEnv.get_template('notFound.html').render()
-    
-    return serverResponse
-
-# POST method will convert reqData to request FieldStorage
-# and handle reqFS in auxillary function
-def handle_post(jEnv, reqData):
-    #print "Got :%s" %(repr(reqData),)
-    path = urlparse(reqData.split()[1])[2] # credit to Jason Lefler
-    path = path.lstrip('/')
-    path += 'P.html' # P for post specialized pages
-    
-    reqFS = createPostFS(reqData)
-
-    try:
-        serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
-        serverResponse += jEnv.get_template(path).render(reqFS)
-    except jinja2.exceptions.TemplateNotFound:
-        serverResponse = error404(jEnv, reqData)    
-    return serverResponse
+    return path
 
 # initialize field storage object based on request data
-# specialized for post method
-def createPostFS(reqData):
+# specialized for post method, but also work with GET
+def createFS(reqData):
     buf = StringIO.StringIO(reqData)
     line = buf.readline()
     env = {'REQUEST_METHOD' : line.split()[0]}
+
+    # create query string to work with GET method
+    uri = line.split()[1]
+    queryString = ''
+    if "?" in uri:
+        queryString = uri.split('?',1)[-1]
+    env['QUERY_STRING'] = queryString
 
     headers = {}
 
@@ -138,12 +103,21 @@ def createPostFS(reqData):
             break
 
         lineList = line.strip('\r\n').split(':')
-        headers[lineList[0].lower()] = lineList[1]
-
+        headers[lineList[0].lower()] = lineList[1] # credit to Ben Taylor
+    # to make fieldstorage work with get
+    if not 'content-type' in headers:
+        headers['content-type'] = 'application/x-www-form-urlencoded'
+            
     # credit to Maxwell Brown and Xavier Durand-Hollis
     formFS = cgi.FieldStorage(fp = buf, headers=headers, environ=env)
-
     return formFS
+
+def error404(jEnv, reqData):
+    serverResponse = 'HTTP/1.0 404 Not Found\r\n'
+    serverResponse += 'Content-type: text/html\r\n\r\n'
+    serverResponse += jEnv.get_template('notFound.html').render()
     
+    return serverResponse
+
 if __name__ == '__main__':
     main()
