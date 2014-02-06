@@ -1,0 +1,7 @@
+{% extends "base.html" %}
+{% block content %}
+<h1>Hello {% if firstname is defined -%} {{firstname.value}} {%-else-%} No
+  {%-endif%} {% if lastname is defined -%} {{lastname.value}} {%-else-%} Name
+  {%-endif%}
+</h1>
+{% endblock %}
