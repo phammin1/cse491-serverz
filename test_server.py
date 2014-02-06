@@ -1,4 +1,9 @@
 import server
+import jinja2
+
+jinjaTemplate = './templates'
+
+okay_header = 'HTTP/1.0 200 OK' 
 
 class FakeConnection(object):
     """
@@ -9,6 +14,8 @@ class FakeConnection(object):
         self.to_recv = to_recv
         self.sent = ""
         self.is_closed = False
+        jLoader = jinja2.FileSystemLoader(jinjaTemplate)
+        self.jEnv = jinja2.Environment(loader=jLoader)
 
     def recv(self, n):
         if n > len(self.to_recv):
@@ -25,177 +32,145 @@ class FakeConnection(object):
     def close(self):
         self.is_closed = True
 
+    def env(self):
+        return self.jEnv
+
+    def isOkay(self):
+        return self.header() == okay_header
+
+    def header(self):
+        return self.sent.split('\r\n')[0]
+
 # Test a basic GET call.
 
 def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Hello</h1>' + \
-                      '<a href="/content">Content</a><br></br>' + \
-                      '<a href="/file">File</a><br></br>' + \
-                      '<a href="/image">Image</a><br></br>' + \
-                      '<a href="/form">Form</a><br></br>' +\
-                      '<a href="/formPost">Form (Post)</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Hello' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_content():
     conn = FakeConnection("GET /content HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Content</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Content' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
     
 def test_handle_file():
     conn = FakeConnection("GET /file HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>File</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'File' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_image():
     conn = FakeConnection("GET /image HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Image</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_form():
     conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
-    expected_return ='HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Form</h1>" + \
-                     "<form action='/submit' method='GET'>" +\
-                     "<input type='text' name='firstname'><br></br>" +\
-                     "<input type='text' name='lastname'><br></br>" +\
-                     "<input type='submit' name='submit'><br></br>" +\
-                     "</form>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-    
-def test_handle_post():
-    conn = FakeConnection("POST / HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>POST method</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
-
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Form' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_get_submit():
     conn = FakeConnection("GET /submit?firstname=Minh&lastname=Pham&submit=Submit+Query HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Hello Minh Pham</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
+    
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-
-def test_get_submit():
+def test_get_submit_empty():
     conn = FakeConnection("GET /submit HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>Hello No Name</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
+    server.handle_connection(conn, conn.env())
+    
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-
-def test_post_submit():
-    conn = FakeConnection("POST /submit HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\n' + \
-                      'Content-type: text/html\r\n' + \
-                      '\r\n' + \
-                      '<h1>(Post) Hello No Name</h1>' + \
-                      '<a href="/">Home</a><br></br>' +\
-                      'This is Minh\'s Web server.'
-
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)
-
-def test_post_form():
+def test_form_post():
     conn = FakeConnection("GET /formPost HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Form Post</h1>" + \
-                     "<form action='/submit' method='POST'>" +\
-                     "<input type='text' name='firstname'><br></br>" +\
-                     "<input type='text' name='lastname'><br></br>" +\
-                     "<input type='submit' name='submit'><br></br>" +\
-                     "</form>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
+    server.handle_connection(conn, conn.env())
 
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)    
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'POST' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_404_post():
     conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
-                      '<a href="/">Home</a><br></br>' +\
-                     "<h1>Not Found</h1>This is Minh\'s Web server."
+    server.handle_connection(conn, conn.env())
 
-
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
 def test_404_fake():
     conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
-                      '<a href="/">Home</a><br></br>' +\
-                     "<h1>Not Found</h1>This is Minh\'s Web server."
+    server.handle_connection(conn, conn.env())
 
-
-    server.handle_connection(conn)
-
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
 def test_404_get():
     conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
-    expected_return = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
-                      '<a href="/">Home</a><br></br>' +\
-                     "<h1>Not Found</h1>This is Minh\'s Web server."
+    server.handle_connection(conn, conn.env())
 
+    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
-    server.handle_connection(conn)
+def test_post_submit_multi():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Host: arctic.cse.msu.edu:9853\r\n' +\
+	'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131030 Firefox/17.0 Iceweasel/17.0.10\r\n' +\
+	'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n' +\
+	'Accept-Language: en-US,en;q=0.5\r\n' +\
+	'Accept-Encoding: gzip, deflate\r\n' +\
+	'Connection: keep-alive\r\n' +\
+	'Referer: http://arctic.cse.msu.edu:9853/formPost\r\n'+\
+	'Content-Type: multipart/form-data; boundary=---------------------------10925359777073771901781915428\r\n' +\
+	'Content-Length: 420\r\n' +\
+	'\r\n' +\
+	'-----------------------------10925359777073771901781915428\r\n' +\
+	'Content-Disposition: form-data; name="firstname"\r\n' +\
+	'\r\n' +\
+	'Minh\r\n' +\
+	'-----------------------------10925359777073771901781915428\r\n' +\
+	'Content-Disposition: form-data; name="lastname"\r\n' +\
+	'\r\n' +\
+	'Pham\r\n' +\
+	'-----------------------------10925359777073771901781915428\r\n' +\
+	'Content-Disposition: form-data; name="submit"\r\n' +\
+	'\r\n' +\
+	'Submit Query\r\n' +\
+	'-----------------------------10925359777073771901781915428--\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn, conn.env())
 
-    assert conn.sent == expected_return, 'Got: %s' % (repr(conn.sent),)  
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+
+def test_post_submit_app():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Host: arctic.cse.msu.edu:9176\r\n' +\
+	'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131030 Firefox/17.0 Iceweasel/17.0.10\r\n' +\
+	'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n' +\
+	'Accept-Language: en-US,en;q=0.5\r\n' +\
+	'Accept-Encoding: gzip, deflate\r\n' +\
+	'Connection: keep-alive\r\n' +\
+	'Referer: http://arctic.cse.msu.edu:9176/formPost\r\n' +\
+	'Content-Type: application/x-www-form-urlencoded\r\n' +\
+	'Content-Length: 48\r\n' +\
+	'\r\n' +\
+	'firstname=Minh&lastname=Pham&submit=Submit+Query\r\n'
+
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn, conn.env())
+
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+
+def test_post_submit_empty():
+    conn = FakeConnection("POST /submit HTTP/1.0\r\n\r\n")
+    server.handle_connection(conn, conn.env())
+
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
+    assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
