@@ -138,10 +138,8 @@ def createPostFS(reqData):
             break
 
         lineList = line.strip('\r\n').split(':')
-        headers[lineList[0]] = lineList[1]
+        headers[lineList[0].lower()] = lineList[1]
 
-    if 'Content-Type' in headers and 'content-type' not in headers:
-        headers["content-type"] = headers['Content-Type']
     # credit to Maxwell Brown and Xavier Durand-Hollis
     formFS = cgi.FieldStorage(fp = buf, headers=headers, environ=env)
 
