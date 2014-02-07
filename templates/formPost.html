@@ -1,6 +1,9 @@
 {% extends "base.html" %}
+{% block title %}
+Formpost
+{% endblock %}
 {% block content %}
-<h1>Form</h1>
+<h1>Form (POST)</h1>
 <form action='/submit' method='POST'>
   <input type='text' name='firstname'><br></br>
   <input type='text' name='lastname'><br></br>
