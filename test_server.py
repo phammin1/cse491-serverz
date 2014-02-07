@@ -1,4 +1,5 @@
 import server
+
 import jinja2
 
 okay_header = 'HTTP/1.0 200 OK' 
@@ -177,3 +178,4 @@ def test_favicon():
 
     assert conn.header() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
+
