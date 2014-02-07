@@ -1,8 +1,6 @@
 import server
 import jinja2
 
-jinjaTemplate = './templates'
-
 okay_header = 'HTTP/1.0 200 OK' 
 
 class FakeConnection(object):
@@ -14,8 +12,6 @@ class FakeConnection(object):
         self.to_recv = to_recv
         self.sent = ""
         self.is_closed = False
-        jLoader = jinja2.FileSystemLoader(jinjaTemplate)
-        self.jEnv = jinja2.Environment(loader=jLoader)
 
     def recv(self, n):
         if n > len(self.to_recv):
@@ -32,9 +28,6 @@ class FakeConnection(object):
     def close(self):
         self.is_closed = True
 
-    def env(self):
-        return self.jEnv
-
     def isOkay(self):
         return self.header() == okay_header
 
@@ -45,75 +38,75 @@ class FakeConnection(object):
 
 def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Hello' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_content():
     conn = FakeConnection("GET /content HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Content' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
     
 def test_handle_file():
     conn = FakeConnection("GET /file HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'File' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_image():
     conn = FakeConnection("GET /image HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_handle_form():
     conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Form' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_get_submit():
     conn = FakeConnection("GET /submit?firstname=Minh&lastname=Pham&submit=Submit+Query HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
     
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_get_submit_empty():
     conn = FakeConnection("GET /submit HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
     
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_form_post():
     conn = FakeConnection("GET /formPost HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'POST' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_404_post():
     conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
 def test_404_fake():
     conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
 def test_404_get():
     conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
 
@@ -143,7 +136,7 @@ def test_post_submit_multi():
 	'Submit Query\r\n' +\
 	'-----------------------------10925359777073771901781915428--\r\n'
     conn = FakeConnection(reqString)
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
@@ -163,14 +156,17 @@ def test_post_submit_app():
 	'firstname=Minh&lastname=Pham&submit=Submit+Query\r\n'
 
     conn = FakeConnection(reqString)
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Minh Pham' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_post_submit_empty():
     conn = FakeConnection("POST /submit HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn, conn.env())
+    server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+
+
+    
