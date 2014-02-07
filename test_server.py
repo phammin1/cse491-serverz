@@ -96,19 +96,22 @@ def test_404_post():
     conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
 
 def test_404_fake():
     conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
 
 def test_404_get():
     conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found', 'Got: %s' % (repr(conn.sent),)
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
 
 def test_post_submit_multi():
     reqString = 'POST /submit HTTP/1.1\r\n' +\
@@ -168,5 +171,9 @@ def test_post_submit_empty():
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
+def test_favicon():
+    conn = FakeConnection("GET /favicon.ico HTTP/1.0\r\n\r\n")
+    server.handle_connection(conn)
 
-    
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
