@@ -13,6 +13,9 @@ class FakeSocketModule(object):
     def getfqdn(self):
         return "fakehost"
 
+    def gethostbyname(self, host):
+        return "0.fake.0.host"
+
     def socket(self):
         return FakeConnection("")
     
@@ -202,6 +205,19 @@ def test_evil_empty():
 
 def test_evil_get():
     conn = FakeConnection("GET")
+    server.handle_connection(conn)
+
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
+
+def test_evil_header():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Content-Type: application/x-www-form-urlencoded\r\n' +\
+	'Content-Length:48\r\n' +\
+	'\r\n' +\
+	'firstname=Minh&lastname=Pham&submit=Submit+Query\r\n'
+
+    conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
     assert conn.header() == 'HTTP/1.0 404 Not Found',\

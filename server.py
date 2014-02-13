@@ -21,9 +21,10 @@ def main(socketModule = None):
     s = socketModule.socket()         # Create a socket object
     host = socketModule.getfqdn() # Get local machine name
     port = random.randint(8000,8009)
+    ipAddress = socketModule.gethostbyname(host)
     s.bind((host, port))        # Bind to the port
     
-    print 'Starting server on', host, port
+    print 'Starting server on', ipAddress, port
     print 'The Web server URL for this would be http://%s:%d/' % (host, port)
 
     s.listen(5)                 # Now wait for client connection.
@@ -41,14 +42,12 @@ def signal_handler(signum, frame):
 
 def handle_connection(conn):
     # start_response function used in make_app
-    # credit to Ben Taylor
-    def start_response(status, headers):
-        headRes = 'HTTP/1.0 ' + status + '\r\n'
-        for header in headers:
-            k, v = header
-            headRes += k + ': ' + v + '\r\n'
-        headRes += '\r\n'
-        conn.send(headRes)
+    # credit to Ben Taylor and Josh Shadik
+    def start_response(status, resHeaders, exc_info=None):
+        conn.send('HTTP/1.0 %s\r\n' % (status))
+        for header in resHeaders:
+            conn.send('%s: %s\r\n' % header)
+        conn.send('\r\n')
         
     reqData = getData(conn)
     reqEnv = createEnv(reqData)
@@ -89,33 +88,32 @@ def createEnv(reqData):
     try:
         uri = line.split()[1]
     except IndexError:
-        return create404Env(reqData) # more evil request
-    
+        return create404Env(reqData) # more evil request    
     env['PATH_INFO'] = uri.split('?',1)[0]
     if "?" in uri:
         env['QUERY_STRING'] = uri.split('?',1)[1]
 
+    # putting headers data to environment dict
     while True:
         line = buf.readline()
         if line == '\r\n' or line == '':
             break # empty line = end of headers section
-        key, value = line.strip('\r\n').split(": ",1)
-        key = key.upper().replace('-','_')
-        env[key] = value
+        if ': ' in line:
+            key, value = line.strip('\r\n').split(": ",1)
+            key = key.upper().replace('-','_')
+            env[key] = value
+        else:
+            return create404Env(reqData)
 
     env['wsgi.input'] = buf
     return env
 
 # Create a 404 environment
 def create404Env(reqData):
-    env = {'REQUEST_METHOD' : 'GET',\
+    return {'REQUEST_METHOD' : 'GET',\
                'QUERY_STRING' : '',\
                'PATH_INFO': '/fakeabcz',\
                'wsgi.input': None}
-
-    print 'Environ: ',env
-    
-    return env
     
 if __name__ == '__main__':
     main()
