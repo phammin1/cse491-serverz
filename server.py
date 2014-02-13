@@ -2,19 +2,31 @@
 # Minh Pham
 # CSE 491
 
-import random
-import socket
-import time
-from urlparse import urlparse, parse_qs  # credit to Jason Lefler code
+import random, socket, time
+from urlparse import urlparse  # credit to Jason Lefler code
+import signal # to control execution time
+import cgi # to parse post data
+import jinja2 # for html template
+import StringIO # for string buffer
 
+# jinja file path
+JinjaTemplateDir = './templates'
 
-def main():
-    s = socket.socket()         # Create a socket object
-    host = socket.getfqdn() # Get local machine name
-    port = random.randint(8000, 9999)
-    #port = 2906
+# buffer size for conn.recv
+BuffSize = 128
+
+# timeout for conn.recv (in seconds)
+ConnTimeout = .1
+
+def main(socketModule = None):
+    if socketModule == None:
+        socketModule = socket
+
+    s = socketModule.socket()         # Create a socket object
+    host = socketModule.getfqdn() # Get local machine name
+    port = random.randint(8000,8009)
     s.bind((host, port))        # Bind to the port
-
+    
     print 'Starting server on', host, port
     print 'The Web server URL for this would be http://%s:%d/' % (host, port)
 
@@ -27,155 +39,82 @@ def main():
         print 'Got connection from', client_host, client_port
         handle_connection(conn)
 
+# raise error when time out
+def signal_handler(signum, frame):
+    raise Exception("Timed out!")
+
 def handle_connection(conn):
-    reqData = conn.recv(1000)
-    reqMethod = reqData.split('\n')[0].split(' ')[0]
-
-    if reqMethod == 'GET':
-        serverResponse = handle_get(conn,reqData)
-    elif reqMethod == "POST":
-        serverResponse = handle_post(conn,reqData)
-    else:
-        serverResponse = error404(conn, reqData)
-
+    jLoader = jinja2.FileSystemLoader(JinjaTemplateDir)
+    jEnv = jinja2.Environment(loader=jLoader)
+    
+    reqData = getData(conn)
+    reqPage = getPage(reqData)
+    reqFS = createFS(reqData)
+    
+    try:
+        serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n'
+        serverResponse += jEnv.get_template(reqPage).render(reqFS)
+    except jinja2.exceptions.TemplateNotFound:
+        serverResponse = error404(jEnv, reqData)
+ 
     conn.send(serverResponse)
     conn.close()
 
-def handle_get(conn,reqData):
-    path = urlparse(reqData.split()[1])[2] # credit to Jason Lefler
+# handle getting data from connection with arbitrary size
+def getData(conn):
+    # Note: can use global reqData to get rid of error
+    reqData = ""
+    # signal is used to control execution time
+    signal.signal(signal.SIGALRM, signal_handler)
+    signal.setitimer(signal.ITIMER_REAL, ConnTimeout, ConnTimeout) # set timeout
 
-    if path == '/':
-        serverResponse = indexP(conn, reqData)
-    elif path == '/content':
-        serverResponse = contentP(conn, reqData)
-    elif path == '/file':
-        serverResponse = fileP(conn, reqData)
-    elif path == '/image':
-        serverResponse = imageP(conn, reqData)
-    elif path == '/form':
-        serverResponse = formP(conn, reqData)
-    elif path == '/submit':
-        serverResponse = submitP(conn, reqData)
-    elif path == '/formPost':
-        serverResponse = formPostP(conn, reqData)
-    else :
-        serverResponse = error404(conn, reqData)
-
-    return serverResponse
-    
-def indexP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Hello</h1>" + \
-                   '<a href="/content">Content</a><br></br>' + \
-                   '<a href="/file">File</a><br></br>' + \
-                   '<a href="/image">Image</a><br></br>' + \
-                   '<a href="/form">Form</a><br></br>' +\
-                   '<a href="/formPost">Form (Post)</a><br></br>' +\
-                   "This is Minh\'s Web server." 
-    return serverResponse
-    
-def contentP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                   "<h1>Content</h1>" +\
-                   '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
-    return serverResponse
-    
-def fileP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                   "<h1>File</h1>" +\
-                   '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
-    return serverResponse
-    
-def imageP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Image</h1>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                     "This is Minh\'s Web server."
-    return serverResponse
-
-def formP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Form</h1>" + \
-                     "<form action='/submit' method='GET'>" +\
-                     "<input type='text' name='firstname'><br></br>" +\
-                     "<input type='text' name='lastname'><br></br>" +\
-                     "<input type='submit' name='submit'><br></br>" +\
-                     "</form>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
-    return serverResponse
-
-def formPostP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Form Post</h1>" + \
-                     "<form action='/submit' method='POST'>" +\
-                     "<input type='text' name='firstname'><br></br>" +\
-                     "<input type='text' name='lastname'><br></br>" +\
-                     "<input type='submit' name='submit'><br></br>" +\
-                     "</form>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                   "This is Minh\'s Web server."
-    return serverResponse
-
-def submitP(conn, reqData):
-    formData = parse_qs(urlparse(reqData.split()[1])[4])# credit to Jason Lefler
     try:
-        firstName = formData['firstname'][0]
-    except KeyError:
-        firstName = 'No'
-    try:
-        lastName = formData['lastname'][0]
-    except KeyError:
-        lastName = 'Name'
-        
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>Hello %s %s</h1>" %(firstName,lastName,) +\
-                     '<a href="/">Home</a><br></br>' +\
-                     "This is Minh\'s Web server."
-    return serverResponse
+        while True:
+            reqData += conn.recv(BuffSize)
+    except Exception, msg:
+        signal.alarm(0) # turn off signal
+    return reqData
 
-def error404(conn, reqData):
-    serverResponse = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n' + \
-                      '<a href="/">Home</a><br></br>' +\
-                     "<h1>Not Found</h1>This is Minh\'s Web server."
-    return serverResponse
+# Get page name from request data
+def getPage(reqData):
+    path = urlparse(reqData.split()[1])[2].lstrip('/') # credit to Jason Lefler
 
-def handle_post(conn, reqData):
-    path = urlparse(reqData.split()[1])[2] # credit to Jason Lefler
-    if path == '/':
-        serverResponse = postP(conn, reqData)
-    elif path == '/submit':
-        serverResponse = submitPostP(conn, reqData)
-    else:
-        serverResponse = error404(conn, reqData)
-    return serverResponse
+    if path == '':
+        path = 'index'
+    if not '.' in path:
+        path += '.html'
 
-def postP(conn, reqData):
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>POST method</h1>" +\
-                     '<a href="/">Home</a><br></br>' +\
-                     "This is Minh\'s Web server."
-    return serverResponse
+    return path
 
-def submitPostP(conn, reqData):
-    formData = parse_qs(reqData.split('\n')[-1])# credit to Jason Lefler
-    #print formData
-    try:
-        firstName = formData['firstname'][0]
-    except KeyError:
-        firstName = 'No'
-    try:
-        lastName = formData['lastname'][0]
-    except KeyError:
-        lastName = 'Name'
-        
-    serverResponse = 'HTTP/1.0 200 OK\r\nContent-type: text/html\r\n\r\n' + \
-                     "<h1>(Post) Hello %s %s</h1>" %(firstName,lastName,) +\
-                     '<a href="/">Home</a><br></br>' +\
-                     "This is Minh\'s Web server."
-    return serverResponse
+# initialize field storage object based on request data
+# work with both GET and POST method
+def createFS(reqData):
+    buf = StringIO.StringIO(reqData)
+    line = buf.readline()
+    env = {'REQUEST_METHOD' : line.split()[0], 'QUERY_STRING' : ''}
+
+    # create query string to work with GET method
+    uri = line.split()[1]
+    if "?" in uri:
+        env['QUERY_STRING'] = uri.split('?',1)[1]
+
+    # seperate headers data
+    # defaul content-type to make fieldstorage work with GET
+    headers = {'content-type': 'application/x-www-form-urlencoded'}
+    while True:
+        line = buf.readline()
+        if line == '\r\n' or line == '':
+            break # empty line = end of headers section
+        key, value = line.strip('\r\n').split(": ",1)
+        headers[key.lower()] = value # credit to Ben Taylor
+    
+    # credit to Maxwell Brown
+    return cgi.FieldStorage(fp = buf, headers=headers, environ=env)
+
+def error404(jEnv, reqData):
+    svrRes = 'HTTP/1.0 404 Not Found\r\nContent-type: text/html\r\n\r\n'
+    svrRes += jEnv.get_template('notFound.html').render()
+    return svrRes
 
 if __name__ == '__main__':
     main()
