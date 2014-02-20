@@ -3,6 +3,22 @@ import jinja2
 
 okay_header = 'HTTP/1.0 200 OK' 
 
+# List of pages have been implemented
+PageList = ['index', 'content', 'file', 'image', 'form', 'formPost', 'environ']
+
+class AcceptCalledMultipleTimes(Exception):
+    pass
+
+class FakeSocketModule(object):
+    def getfqdn(self):
+        return "fakehost"
+
+    def gethostbyname(self, host):
+        return "0.fake.0.host"
+
+    def socket(self):
+        return FakeConnection("")
+    
 class FakeConnection(object):
     """
     A fake connection class that mimics a real TCP socket for the purpose
@@ -12,6 +28,7 @@ class FakeConnection(object):
         self.to_recv = to_recv
         self.sent = ""
         self.is_closed = False
+        self.n_times_accept_called = 0
 
     def recv(self, n):
         if n > len(self.to_recv):
@@ -34,8 +51,34 @@ class FakeConnection(object):
     def header(self):
         return self.sent.split('\r\n')[0]
 
-# Test a basic GET call.
+    def bind(self, param):
+        (host, port) = param
+    
+    def listen(self, n):
+        if n != 5:
+            raise Exception("n should be five you dumby")
 
+    def accept(self):
+        if self.n_times_accept_called > 1:
+            raise AcceptCalledMultipleTimes("stop calling accept, please")
+        self.n_times_accept_called += 1
+        
+        c = FakeConnection("")
+        return c, ("noclient", 32351)
+
+# Test main for increased coverage
+def test_main():
+    fakemodule = FakeSocketModule()
+
+    success = False
+    try:
+        server.main(fakemodule)
+    except AcceptCalledMultipleTimes:
+        success = True
+
+    assert success, "something went wrong"
+    
+# Test a basic GET call.
 def test_handle_connection():
     conn = FakeConnection("GET / HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
@@ -43,33 +86,15 @@ def test_handle_connection():
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'Hello' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
-def test_handle_content():
-    conn = FakeConnection("GET /content HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn)
+def test_all_normal_page():
+    for page in PageList:
+        reqString = "GET /" + page + " HTTP/1.0\r\n\r\n"
+        conn = FakeConnection(reqString)
+        server.handle_connection(conn)
 
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
-    assert 'Content' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
-    
-def test_handle_file():
-    conn = FakeConnection("GET /file HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn)
-
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
-    assert 'File' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
-
-def test_handle_image():
-    conn = FakeConnection("GET /image HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn)
-
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
-    assert 'Image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
-
-def test_handle_form():
-    conn = FakeConnection("GET /form HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn)
-
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
-    assert 'Form' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+        assert conn.isOkay(), 'Not Okay: %s' % (repr(conn.sent),)
+        assert page.capitalize() in conn.sent,\
+           'Wrong page %s: %s' % (page,repr(conn.sent),)
 
 def test_get_submit():
     conn = FakeConnection("GET /submit?firstname=Minh&lastname=Pham&submit=Submit+Query HTTP/1.0\r\n\r\n")
@@ -84,13 +109,6 @@ def test_get_submit_empty():
     
     assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
     assert 'No Name' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
-
-def test_form_post():
-    conn = FakeConnection("GET /formPost HTTP/1.0\r\n\r\n")
-    server.handle_connection(conn)
-
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.sent),)
-    assert 'POST' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_404_post():
     conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
@@ -173,6 +191,33 @@ def test_post_submit_empty():
 
 def test_favicon():
     conn = FakeConnection("GET /favicon.ico HTTP/1.0\r\n\r\n")
+    server.handle_connection(conn)
+
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
+
+def test_evil_empty():
+    conn = FakeConnection("")
+    server.handle_connection(conn)
+
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
+
+def test_evil_get():
+    conn = FakeConnection("GET")
+    server.handle_connection(conn)
+
+    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+        'Got: %s' % (repr(conn.sent),)
+
+def test_evil_header():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Content-Type: application/x-www-form-urlencoded\r\n' +\
+	'Content-Length:48\r\n' +\
+	'\r\n' +\
+	'firstname=Minh&lastname=Pham&submit=Submit+Query\r\n'
+
+    conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
     assert conn.header() == 'HTTP/1.0 404 Not Found',\
