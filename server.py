@@ -7,18 +7,15 @@ from urlparse import urlparse  # credit to Jason Lefler code
 import signal # to control execution time
 import StringIO # for string buffer
 from app import make_app # for making an app
-from wsgiref.validate import validator
-from sys import stderr
-import ServerEnv
+from wsgiref.validate import validator # validating server side
+from sys import stderr # for wsgi.err
+import ServerEnv # for some default environment
 
 # buffer size for conn.recv
 BuffSize = 128
 
 # timeout for conn.recv (in seconds)
 ConnTimeout = .1
-
-# A template of Environment
-EnvFile = 'env.txt'
 
 def main(socketModule = None):
     if socketModule == None:
@@ -46,7 +43,7 @@ def main(socketModule = None):
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
 
-def handle_connection(conn, host='fake', port=8080):
+def handle_connection(conn, host='fake', port=0):
     # start_response function used in make_app
     # credit to Ben Taylor and Josh Shadik
     def start_response(status, resHeaders, exc_info=None):

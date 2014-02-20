@@ -2,9 +2,7 @@
 # CSE 491
 
 import app
-
-# A template of Environment
-EnvFile = 'env.txt'
+import ServerEnv
 
 # List of pages have been implemented
 PageList = ['index', 'content', 'form', 'formPost', 'environ']
@@ -13,17 +11,8 @@ class FakeServer(object):
    """
    A fake server class that mimic WSGI simple_server for testing
    """
-   def __init__(self, app=app.make_app(), envPath = EnvFile):
-       self.env = {}
-       envF = open(envPath)
-       for line in envF:
-
-           line = line.strip('\n')
-           if ': ' in line:
-               key, value = line.split(': ',1)
-               self.env[key] = value
-           else:
-               self.env[line.strip(':')] = ''
+   def __init__(self, app=app.make_app()):
+       self.env = ServerEnv.DefaultEnv()
        self.status = ''
        self.headers = []
        self.app = app

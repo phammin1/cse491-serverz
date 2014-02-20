@@ -1,23 +1,20 @@
 # Minh Pham
 # CSE 491
 
-from wsgiref.util import setup_testing_defaults
 import cgi # for fieldStorage - parsing data
 import jinja2 # for template
 from werkzeug.wrappers import Response # for making wrapper class
-import mimetypes
+from mimetypes import guess_type # for mapping file extension to mimetype
 
 # jinja file path
 JinjaTemplateDir = './templates'
 
-# Other type resources
+# Other type of resources (.ico, .jpg, ...)
 ResDir = './resources'
 
 # A relatively simple WSGI application. It's going to print out the
 # environment dictionary after being updated by setup_testing_defaults
 def simple_app(environ, start_response):
-    setup_testing_defaults(environ)
-
     if environ['PATH_INFO'] == '/file':
         environ['PATH_INFO'] = '/file.txt'
     elif environ['PATH_INFO'] == '/image':
@@ -44,23 +41,19 @@ def error404():
 def handle_html(environ):
     jEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(JinjaTemplateDir))
 
-    reqPage = getPage(environ['PATH_INFO'])
-    reqFS = cgi.FieldStorage(fp = environ['wsgi.input'],environ=environ)
-
-    try:
-        tmp = jEnv.get_template(reqPage).render(reqFS)
-        return Response(tmp, mimetype ='text/html')
-    except jinja2.exceptions.TemplateNotFound:
-        return error404()
-
-# Get page name from path
-def getPage(path):
+    path = environ['PATH_INFO']
     if path == '/':
-        path = 'index'
+        path = '/index'
     if not '.' in path:
         path += '.html'
 
-    return path
+    reqFS = cgi.FieldStorage(fp = environ['wsgi.input'],environ=environ)
+
+    try:
+        tmp = jEnv.get_template(path).render(reqFS)
+        return Response(tmp, mimetype ='text/html')
+    except jinja2.exceptions.TemplateNotFound:
+        return error404()
 
 # Handle resources (.txt, .jpg, .ico,...) request
 def handle_resources(environ):
@@ -68,11 +61,12 @@ def handle_resources(environ):
     try:
         fp = open(fileDir, 'rb')
     except IOError:
+        # File not found
         return error404()
 
     data = fp.read()
     fp.close()
-    return Response(data, mimetype = mimetypes.guess_type(fileDir)[0])
+    return Response(data, mimetype = guess_type(fileDir)[0])
 
 def make_app():
     return simple_app
