@@ -4,7 +4,7 @@ import jinja2
 okay_header = 'HTTP/1.0 200 OK' 
 
 # List of pages have been implemented
-PageList = ['index', 'content', 'file', 'image', 'form', 'formPost', 'environ']
+PageList = ['index', 'content', 'form', 'formPost', 'environ']
 
 class AcceptCalledMultipleTimes(Exception):
     pass
@@ -193,9 +193,15 @@ def test_favicon():
     conn = FakeConnection("GET /favicon.ico HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
+    assert conn.isOkay(), 'Not Okay: %s' % (repr(conn.sent),)
+
+def test_fake_file():
+    conn = FakeConnection("GET /fake.file HTTP/1.0\r\n\r\n")
+    server.handle_connection(conn)
+
     assert conn.header() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
-
+    
 def test_evil_empty():
     conn = FakeConnection("")
     server.handle_connection(conn)
@@ -210,6 +216,7 @@ def test_evil_get():
     assert conn.header() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
+# evil content-length:48 (no space)
 def test_evil_header():
     reqString = 'POST /submit HTTP/1.1\r\n' +\
 	'Content-Type: application/x-www-form-urlencoded\r\n' +\

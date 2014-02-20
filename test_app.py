@@ -7,7 +7,7 @@ import app
 EnvFile = 'env.txt'
 
 # List of pages have been implemented
-PageList = ['index', 'content', 'file', 'image', 'form', 'formPost', 'environ']
+PageList = ['index', 'content', 'form', 'formPost', 'environ']
 
 class FakeServer(object):
    """
@@ -58,6 +58,15 @@ def test_index():
 
     assert server.isOkay(), "Not Okay\n" + server.info()
     assert 'Hello' in server.response, "Wrong page\n" + server.info()
+
+def test_index_html():
+    reqString = "GET /index.html HTTP/1.0\r\n\r\n"
+
+    server = FakeServer()
+    server.request(reqString)
+
+    assert server.isOkay(), "Not Okay\n" + server.info()
+    assert 'Hello' in server.response, "Wrong page\n" + server.info()
     
 def test_all_normal_page():
     server = FakeServer()
@@ -80,6 +89,14 @@ def test_404_get():
         
 def test_favicon():
     reqString = "GET /favicon.ico HTTP/1.0\r\n\r\n"
+
+    server = FakeServer()
+    server.request(reqString)
+
+    assert server.isOkay(), "Not Okay\n" + server.info()
+
+def test_fake_file():
+    reqString = "GET /fake.file HTTP/1.0\r\n\r\n"
 
     server = FakeServer()
     server.request(reqString)

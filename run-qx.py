@@ -4,13 +4,14 @@ import random
 ### here is the code needed to create a WSGI application interface to
 ### a Quixote app:
 
+from app import make_app
 import quixote
 from quixote.demo import create_publisher
 from quixote.demo.mini_demo import create_publisher
 from quixote.demo.altdemo import create_publisher
 
 p = create_publisher()
-wsgi_app = quixote.get_wsgi_app()
+wsgi_app = make_app()
 
 ### now that we have a WSGI app, we can run it in the WSGI reference server:
 
