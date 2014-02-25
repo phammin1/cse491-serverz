@@ -11,6 +11,19 @@ from wsgiref.validate import validator # validating server side
 from sys import stderr # for wsgi.err
 import ServerEnv # for some default environment
 
+# Quixote import
+import quixote
+from quixote.demo import create_publisher
+from quixote.demo.mini_demo import create_publisher
+from quixote.demo.altdemo import create_publisher
+
+# Other import
+import imageapp
+
+imageapp.setup()
+p = imageapp.create_publisher()
+wsgi_app = quixote.get_wsgi_app()
+
 # buffer size for conn.recv
 BuffSize = 128
 
@@ -57,7 +70,8 @@ def handle_connection(conn, host='fake', port=0):
             
     reqData = getData(conn)
     reqEnv = createEnv(reqData, defaultEnv)
-    resPage = validator(make_app())(reqEnv, start_response)
+    #resPage = validator(make_app())(reqEnv, start_response)
+    resPage = wsgi_app(reqEnv, start_response)
     
     for svrRes in resPage:
         conn.send(svrRes)
@@ -111,6 +125,8 @@ def createEnv(reqData, defaultEnv):
         else:
             return ServerEnv.Error404Env
 
+    if 'COOKIE' in env.keys():
+        env['HTTP_COOKIE'] = env['COOKIE']
     env['wsgi.input'] = buf
     return env
 
