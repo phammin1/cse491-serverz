@@ -2,7 +2,7 @@
 # CSE 491
 
 import app
-import ServerEnv
+import envTemplates
 
 # List of pages have been implemented
 PageList = ['index', 'content', 'form', 'formPost', 'environ']
@@ -12,7 +12,7 @@ class FakeServer(object):
    A fake server class that mimic WSGI simple_server for testing
    """
    def __init__(self, app=app.make_app()):
-       self.env = ServerEnv.DefaultEnv()
+       self.env = envTemplates.DefaultEnv()
        self.status = ''
        self.headers = []
        self.app = app

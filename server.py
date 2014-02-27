@@ -9,7 +9,7 @@ import StringIO # for string buffer
 from app import make_app # for making an app
 from wsgiref.validate import validator # validating server side
 from sys import stderr # for wsgi.err
-import ServerEnv # for some default environment
+import envTemplates # for some default environment
 
 # Quixote import
 import quixote
@@ -20,9 +20,14 @@ from quixote.demo.altdemo import create_publisher
 # Other import
 import imageapp
 
-imageapp.setup()
-p = imageapp.create_publisher()
-wsgi_app = quixote.get_wsgi_app()
+p = None
+
+def make_image_app():
+    global p
+    if p is None:
+        imageapp.setup()
+        p = imageapp.create_publisher()
+    return quixote.get_wsgi_app()
 
 # buffer size for conn.recv
 BuffSize = 128
@@ -66,12 +71,12 @@ def handle_connection(conn, host='fake', port=0):
         conn.send('\r\n')
 
     # Create a default environ to avoid code breaking
-    defaultEnv = ServerEnv.DefaultEnv(host, port)
+    defaultEnv = envTemplates.DefaultEnv(host, port)
             
     reqData = getData(conn)
     reqEnv = createEnv(reqData, defaultEnv)
-    #resPage = validator(make_app())(reqEnv, start_response)
-    resPage = wsgi_app(reqEnv, start_response)
+    myApp = validator(choose_app(reqEnv))
+    resPage = myApp(reqEnv, start_response) # normal server
     
     for svrRes in resPage:
         conn.send(svrRes)
@@ -96,7 +101,7 @@ def getData(conn):
 # create environment dictionary from request data and a default environment
 def createEnv(reqData, defaultEnv):
     if reqData == '':
-        return ServerEnv.Error404Env # evil empty request
+        return envTemplates.Error404Env # evil empty request
     
     buf = StringIO.StringIO(reqData)
     line = buf.readline()
@@ -108,7 +113,7 @@ def createEnv(reqData, defaultEnv):
     try:
         uri = line.split()[1]
     except IndexError:
-        return ServerEnv.Error404Env # more evil request    
+        return envTemplates.Error404Env # more evil request    
     env['PATH_INFO'] = uri.split('?',1)[0]
     if "?" in uri:
         env['QUERY_STRING'] = uri.split('?',1)[1]
@@ -123,12 +128,20 @@ def createEnv(reqData, defaultEnv):
             key = key.upper().replace('-','_')
             env[key] = value
         else:
-            return ServerEnv.Error404Env
+            return envTemplates.Error404Env
 
     if 'COOKIE' in env.keys():
         env['HTTP_COOKIE'] = env['COOKIE']
     env['wsgi.input'] = buf
     return env
+
+# Choose an app depend on path info in env
+def choose_app(env):
+    if env['PATH_INFO'].startswith('/imageapp/'):
+        env['PATH_INFO'] = env['PATH_INFO'][9:]
+        return make_image_app()
+    else:
+        return make_app()
 
 if __name__ == '__main__':
     main()

@@ -240,3 +240,12 @@ def test_large_jpg():
     server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
+
+# test image app link
+def test_imageapp_index():
+    reqString = 'GET /imageapp/ HTTP/1.0\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn)
+
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
+    assert 'Upload an image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)

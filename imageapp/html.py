@@ -14,8 +14,6 @@ def init_templates():
     t_dir = os.path.join(dirname, template_dir)
     t_dir = os.path.abspath(t_dir)
 
-    print 'loading templates from:', t_dir
-
     loader = jinja2.FileSystemLoader(t_dir)
     env = jinja2.Environment(loader=loader)
 

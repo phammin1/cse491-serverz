@@ -17,11 +17,8 @@ class RootDirectory(Directory):
     @export(name='upload_receive')
     def upload_receive(self):
         request = quixote.get_request()
-        print request.form.keys()
-
         the_file = request.form['file']
-        print dir(the_file)
-        print 'received file with name:', the_file.base_filename
+        print 'received image with name:', the_file.base_filename
         data = the_file.read(int(1e9))
 
         image.add_image(data)
