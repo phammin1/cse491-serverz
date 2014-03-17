@@ -1,0 +1,8 @@
+follow upload
+formfile 1 file imageapp/dice.png
+submit
+code 200
+
+go /image
+code 200
+find "Here is your image:"

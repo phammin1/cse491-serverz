@@ -8,7 +8,7 @@ import signal # to control execution time
 import StringIO # for string buffer
 from app import make_app # for making an app
 from wsgiref.validate import validator # validating server side
-import sys, getopt # for command line argument
+import argparse # for command line argument
 import envTemplates # for some default environment
 
 # Quixote import
@@ -17,6 +17,10 @@ from quixote.demo.altdemo import create_publisher
 
 # Other import
 import imageapp
+
+# Constant
+# Currently implement app for deploy
+AppChoices = ['imageapp', 'altdemo', 'default']
 
 # make image app
 def make_image_app():
@@ -36,15 +40,21 @@ ConnTimeout = .1
 
 def main(socketModule = None):
     # choose app based on system argument
-    appStr = parse_sys_arg()
-    myApp = choose_app(appStr)
+    args = parse_sys_arg()
+    myApp = choose_app(args.a)
+
+    # choose port number
+    if args.p == 0:
+        port = random.randint(8000,8009)
+    else:
+        port = args.p
     
     if socketModule == None:
         socketModule = socket
 
     s = socketModule.socket()         # Create a socket object
     host = socketModule.getfqdn() # Get local machine name
-    port = random.randint(8000,8009)
+    
     ipAddress = socketModule.gethostbyname(host)
     s.bind((host, port))        # Bind to the port
     
@@ -151,27 +161,14 @@ def choose_app(appStr):
         print 'Using default app...'
         return make_app()
 
+# Parse the command line arguments
 def parse_sys_arg():
-   appStr = '' # default to avoid breaking
-
-   # parsing the sys arguments using getopt
-   try:
-       opts, args = getopt.getopt(sys.argv[1:], "a:a", ["app="])
-   except getopt.GetoptError:
-       print 'Error 2: Parsing of command line argument error'
-       print_help()
-       return 'default'
-   
-   for opt, arg in opts:
-      if opt == '-h': # help option
-         print_help()
-         sys.exit()
-      if opt in ('-a', '--app'): # app option
-         appStr = arg 
-   
-   print 'App option: ', appStr, '...'
-
-   return appStr
+    parser = argparse.ArgumentParser(description='Run a WSGI server.')
+    parser.add_argument('-a', default = 'default',\
+                        choices = AppChoices,\
+                        help='The WSGI app to run')
+    parser.add_argument('-p', default=0, type=int, help='Port number to run')
+    return parser.parse_args()
 
 def print_help():
     print 'usage: python server.py -a <app>'

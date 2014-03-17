@@ -1,0 +1,14 @@
+follow login
+formvalue 1 name yolo
+submit
+
+find "Welcome, yolo!"
+
+go /
+find "Hello, yolo."
+
+follow logout
+find "Goodbye, yolo."
+
+follow "start over"
+notfind "Hello"
