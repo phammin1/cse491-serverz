@@ -8,25 +8,24 @@ import signal # to control execution time
 import StringIO # for string buffer
 from app import make_app # for making an app
 from wsgiref.validate import validator # validating server side
-from sys import stderr # for wsgi.err
+import sys, getopt # for command line argument
 import envTemplates # for some default environment
 
 # Quixote import
 import quixote
-from quixote.demo import create_publisher
-from quixote.demo.mini_demo import create_publisher
 from quixote.demo.altdemo import create_publisher
 
 # Other import
 import imageapp
 
-p = None
-
+# make image app
 def make_image_app():
-    global p
-    if p is None:
-        imageapp.setup()
-        p = imageapp.create_publisher()
+    imageapp.setup()
+    imageapp.create_publisher()
+    return quixote.get_wsgi_app()
+
+def make_altdemo_app():
+    create_publisher()
     return quixote.get_wsgi_app()
 
 # buffer size for conn.recv
@@ -36,6 +35,10 @@ BuffSize = 128
 ConnTimeout = .1
 
 def main(socketModule = None):
+    # choose app based on system argument
+    appStr = parse_sys_arg()
+    myApp = choose_app(appStr)
+    
     if socketModule == None:
         socketModule = socket
 
@@ -55,13 +58,13 @@ def main(socketModule = None):
         # Establish connection with client.    
         conn, (client_host, client_port) = s.accept()
         print 'Got connection from', client_host, client_port
-        handle_connection(conn, host, port)
+        handle_connection(conn, host, port, myApp)
 
 # raise error when time out
 def signal_handler(signum, frame):
     raise Exception("Timed out!")
 
-def handle_connection(conn, host='fake', port=0):
+def handle_connection(conn, host='fake', port=0, anApp=make_app()):
     # start_response function used in make_app
     # credit to Ben Taylor and Josh Shadik
     def start_response(status, resHeaders, exc_info=None):
@@ -75,7 +78,8 @@ def handle_connection(conn, host='fake', port=0):
             
     reqData = getData(conn)
     reqEnv = createEnv(reqData, defaultEnv)
-    myApp = validator(choose_app(reqEnv))
+    #myApp = validator(anApp)
+    myApp = anApp
     resPage = myApp(reqEnv, start_response) # normal server
     
     for svrRes in resPage:
@@ -136,12 +140,41 @@ def createEnv(reqData, defaultEnv):
     return env
 
 # Choose an app depend on path info in env
-def choose_app(env):
-    if env['PATH_INFO'].startswith('/imageapp/'):
-        env['PATH_INFO'] = env['PATH_INFO'][9:]
+# from http://www.tutorialspoint.com/python/python_command_line_arguments.htm
+def choose_app(appStr):
+    if appStr == 'imageapp':
         return make_image_app()
+    elif appStr == 'altdemo':
+        return make_altdemo_app()
     else:
+        # Default value
+        print 'Using default app...'
         return make_app()
+
+def parse_sys_arg():
+   appStr = '' # default to avoid breaking
+
+   # parsing the sys arguments using getopt
+   try:
+       opts, args = getopt.getopt(sys.argv[1:], "a:a", ["app="])
+   except getopt.GetoptError:
+       print 'Error 2: Parsing of command line argument error'
+       print_help()
+       return 'default'
+   
+   for opt, arg in opts:
+      if opt == '-h': # help option
+         print_help()
+         sys.exit()
+      if opt in ('-a', '--app'): # app option
+         appStr = arg 
+   
+   print 'App option: ', appStr, '...'
+
+   return appStr
+
+def print_help():
+    print 'usage: python server.py -a <app>'
 
 if __name__ == '__main__':
     main()
