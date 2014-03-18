@@ -1,4 +1,19 @@
- * Merge from hw2
+2014-03-17  Minh Pham
+	
+* Add project 4
+	Change imageapp to support JPEG and TIFF. (5 pts)
+Add a list in imageapp/image.py to save filename, therefore can
+know the content type of image and support different image files
+
+* Add project 5
+	Write something that prevents denial of services by uploading
+	gigabyte files, or “forever” connections that upload things really
+	slowly. Be sure to write a client-side test. (5 pts.)
+Add if statement to check content-length is bigger than 1GB
+Add signals to check for control execution time and check for timeout
+
+
+* Merge from hw2
 
 2014-01-07  Titus Brown  <t@Titus-MacBook-Air-2.local>
 
