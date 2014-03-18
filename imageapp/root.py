@@ -20,8 +20,8 @@ class RootDirectory(Directory):
         the_file = request.form['file']
         print 'received image with name:', the_file.base_filename
         data = the_file.read(int(1e9))
-
-        image.add_image(data)
+        
+        image.add_image(data, the_file.base_filename)
 
         return quixote.redirect('./')
 
@@ -32,6 +32,6 @@ class RootDirectory(Directory):
     @export(name='image_raw')
     def image_raw(self):
         response = quixote.get_response()
-        response.set_content_type('image/png')
-        img = image.get_latest_image()
+        img, contentType = image.get_latest_image()
+        response.set_content_type(contentType)
         return img
