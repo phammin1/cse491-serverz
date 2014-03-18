@@ -22,35 +22,30 @@ import imageapp
 # Currently implement app for deploy
 AppChoices = ['imageapp', 'altdemo', 'default']
 
-# make image app
-def make_image_app():
-    imageapp.setup()
-    imageapp.create_publisher()
-    return quixote.get_wsgi_app()
-
-def make_altdemo_app():
-    create_publisher()
-    return quixote.get_wsgi_app()
-
 # buffer size for conn.recv
 BuffSize = 128
 
 # timeout for conn.recv (in seconds)
-ConnTimeout = .1
+ConnTimeout = 1
+
+# Max File size to be receive from the server (in byte)
+MaxFileSize = 1000000
 
 def main(socketModule = None):
-    # choose app based on system argument
-    args = parse_sys_arg()
-    myApp = choose_app(args.a)
-
-    # choose port number
-    if args.p == 0:
-        port = random.randint(8000,8009)
-    else:
-        port = args.p
-    
+    # for testing main
     if socketModule == None:
         socketModule = socket
+        # choose app based on system argument
+        args = parse_sys_arg()
+        myApp = choose_app(args.a)
+        # choose port number
+        if args.p == 0:
+            port = random.randint(8000,8009)
+        else:
+            port = args.p
+    else:
+        myApp = choose_app('default')
+        port = 0
 
     s = socketModule.socket()         # Create a socket object
     host = socketModule.getfqdn() # Get local machine name
@@ -86,8 +81,7 @@ def handle_connection(conn, host='fake', port=0, anApp=make_app()):
     # Create a default environ to avoid code breaking
     defaultEnv = envTemplates.DefaultEnv(host, port)
             
-    reqData = getData(conn)
-    reqEnv = createEnv(reqData, defaultEnv)
+    reqEnv = getData(conn, defaultEnv)
     #myApp = validator(anApp)
     myApp = anApp
     resPage = myApp(reqEnv, start_response) # normal server
@@ -98,59 +92,73 @@ def handle_connection(conn, host='fake', port=0, anApp=make_app()):
     conn.close()
 
 # handle getting data from connection with arbitrary size
-def getData(conn):
-    # Note: can use global reqData to get rid of error
-    reqData = ""
+# return an environment dictionary
+def getData(conn, defaultEnv):
     # signal is used to control execution time
     signal.signal(signal.SIGALRM, signal_handler)
     signal.setitimer(signal.ITIMER_REAL, ConnTimeout, ConnTimeout) # set timeout
 
+    env = envTemplates.Error404Env
     try:
-        while True:
-            reqData += conn.recv(BuffSize)
+        env = createEnv(conn, defaultEnv)
     except Exception, msg:
-        signal.alarm(0) # turn off signal
-    return reqData
+        print "Connection Timeout:", msg
+        env = envTemplates.Error400Env("Timeout")
+    signal.alarm(0) # turn off signal
 
-# create environment dictionary from request data and a default environment
-def createEnv(reqData, defaultEnv):
-    if reqData == '':
-        return envTemplates.Error404Env # evil empty request
+    return env
+
+# create environment dictionary from connection and a default environment
+def createEnv(conn, defaultEnv):
+    # Credit to Ben Taylor for parsing request
+    # Start reading in data from the connection
+    reqRaw = conn.recv(1)
+    while reqRaw[-4:] != '\r\n\r\n':
+        new = conn.recv(1)
+        if new == '':
+            return envTemplates.Error400Env("Plain evil")
+        else:
+            reqRaw += new
     
-    buf = StringIO.StringIO(reqData)
-    line = buf.readline()
-
     # some default value to avoid code breaking
     env = defaultEnv.copy()
-    env['REQUEST_METHOD'] = line.split()[0]
+    
+    req, data = reqRaw.split('\r\n',1)
+    env['REQUEST_METHOD'] = req.split(' ',1)[0]
     
     try:
-        uri = line.split()[1]
+        uri = req.split()[1]
     except IndexError:
-        return envTemplates.Error404Env # more evil request    
+        return envTemplates.Error400Env("No path in request") # evil
+    
     env['PATH_INFO'] = uri.split('?',1)[0]
     if "?" in uri:
         env['QUERY_STRING'] = uri.split('?',1)[1]
 
     # putting headers data to environment dict
-    while True:
-        line = buf.readline()
-        if line == '\r\n' or line == '':
-            break # empty line = end of headers section
+    for line in data.split('\r\n')[:-2]:
         if ': ' in line:
             key, value = line.strip('\r\n').split(": ",1)
             key = key.upper().replace('-','_')
             env[key] = value
         else:
-            return envTemplates.Error404Env
+            return envTemplates.Error400Env("wrong headers") # evil
 
     if 'COOKIE' in env.keys():
         env['HTTP_COOKIE'] = env['COOKIE']
-    env['wsgi.input'] = buf
+
+    content = ''
+    cLen = int(env['CONTENT_LENGTH'])
+    if cLen > MaxFileSize:
+        return envTemplates.Error400Env("Request size too big")
+    if cLen > 0:
+        while len(content) < cLen:
+            content += conn.recv(BuffSize)
+
+    env['wsgi.input'] = StringIO.StringIO(content)
     return env
 
 # Choose an app depend on path info in env
-# from http://www.tutorialspoint.com/python/python_command_line_arguments.htm
 def choose_app(appStr):
     if appStr == 'imageapp':
         return make_image_app()
@@ -160,18 +168,27 @@ def choose_app(appStr):
         # Default value
         print 'Using default app...'
         return make_app()
+    
+# make image app
+def make_image_app():
+    imageapp.setup()
+    imageapp.create_publisher()
+    return quixote.get_wsgi_app()
+
+def make_altdemo_app():
+    create_publisher()
+    return quixote.get_wsgi_app()
 
 # Parse the command line arguments
+# return the argument
 def parse_sys_arg():
     parser = argparse.ArgumentParser(description='Run a WSGI server.')
-    parser.add_argument('-a', default = 'default',\
+    parser.add_argument('-a', default = 'default', metavar = 'App',\
                         choices = AppChoices,\
                         help='The WSGI app to run')
-    parser.add_argument('-p', default=0, type=int, help='Port number to run')
+    parser.add_argument('-p', default=0, type=int, metavar='Port',\
+                            help='Port number to run')
     return parser.parse_args()
-
-def print_help():
-    print 'usage: python server.py -a <app>'
 
 if __name__ == '__main__':
     main()
