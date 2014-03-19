@@ -1,12 +1,21 @@
+2014-03-19  Minh Pham
+
+* Add project 5
+	Add a URL that provides a list of images, resized to thumbnails
+	(you can just img size, not actual resizing  that will be a
+	separate project ;). (/image_list)
+Use image.py to generate a dictionary contains relevant information to
+render with image_list.html
+
 2014-03-18  Minh Pham
 
 * Add project 6, 7
 	Add image “metadata” uploading, storage, and retrieval: image
-	name, description, etc.
+	name, description, etc. (/upload)
 Change how to store image in image.py
 image is now store as a dictionary with data and other metadata stuff
 
-	Add image metadata search (find image by ...)
+	Add image metadata search (find image by ...) (/search)
 Allow retrieve image through form with proper query
 Search by matching substring in description or file name
 Return search result as a list of dictionary to render with Jinja
@@ -24,7 +33,6 @@ know the content type of image and support different image files
 	slowly. Be sure to write a client-side test. (5 pts.)
 Add if statement to check content-length is bigger than 1GB
 Add signals to check for control execution time and check for timeout
-
 
 * Merge from hw2
 

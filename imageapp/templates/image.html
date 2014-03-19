@@ -3,7 +3,7 @@
 {% block content %}
 Here is your image:
 <p>
-<img width=40% src='image_raw?i={{q}}'/> <br>
-Description: <br><iframe src='image_detail?i={{q}}&f=description'
-			 frameborder = 0 height = 50 seamless=seamless/>
+<img width=40% src='image_raw?i={{index}}'/> <br>
+Image Name: {{file_name}} <br>
+Description: {{description}} <br>
 {% endblock %}

@@ -30,7 +30,8 @@ class RootDirectory(Directory):
     @export(name='image')
     def image(self):
         request = quixote.get_request()
-        return html.render('image.html', values=request.form)
+        imgDict = image.get_metadata(request.form)
+        return html.render('image.html', imgDict)
 
     @export(name='search')
     def search_image(self):
@@ -48,3 +49,9 @@ class RootDirectory(Directory):
     def image_detail(self):
         request = quixote.get_request()
         return image.get_detail(request.form)
+
+    @export(name="image_list")
+    def image_list(self):
+	imgDict = image.get_detail_dict()
+	return html.render('image_list.html', imgDict)
+	

@@ -131,3 +131,27 @@ def get_detail(aForm):
     else:
         return images[imgNum][field]
 
+# Get a detail dict used to generate list of image
+def get_detail_dict():
+    i = 0
+    imgList = []
+    for img in images:
+	imgDict = {"index" : i}
+	imgDict["file_name"] = img["file_name"]
+	imgDict["description"] = img["description"]
+	imgList.append(imgDict)
+	i += 1
+    return {"results": imgList}
+
+# Get meta data of an image from the usual form
+# form must have i field which is the image number
+# return the metadata in dictionary format
+def get_metadata(aForm):
+    imgNum = get_image_number_from_form(aForm)
+    img = images[imgNum]
+    imgDict = {}
+    imgDict["index"] = imgNum
+    imgDict["file_name"] = img["file_name"]
+    imgDict["description"] = img["description"]
+    imgDict["commentList"] = img["commentList"]
+    return imgDict
