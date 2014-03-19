@@ -17,21 +17,34 @@ class RootDirectory(Directory):
     @export(name='upload_receive')
     def upload_receive(self):
         request = quixote.get_request()
-        the_file = request.form['file']
-        print 'received image with name:', the_file.base_filename
-        data = the_file.read(int(1e9))
-        
-        image.add_image(data, the_file.base_filename)
+        image.add_image_from_form(request.form)
 
         return quixote.redirect('./')
 
+    @export(name='search_result')
+    def search_result(self):
+        request = quixote.get_request()
+        resultDict = image.search_image(request.form)
+        return html.render('search_result.html', resultDict)
+        
     @export(name='image')
     def image(self):
-        return html.render('image.html')
+        request = quixote.get_request()
+        return html.render('image.html', values=request.form)
 
+    @export(name='search')
+    def search_image(self):
+        return html.render('search.html')
+    
     @export(name='image_raw')
     def image_raw(self):
+        request = quixote.get_request()
+        img, contentType = image.get_image_from_form(request.form)
         response = quixote.get_response()
-        img, contentType = image.get_latest_image()
         response.set_content_type(contentType)
         return img
+
+    @export(name='image_detail')
+    def image_detail(self):
+        request = quixote.get_request()
+        return image.get_detail(request.form)

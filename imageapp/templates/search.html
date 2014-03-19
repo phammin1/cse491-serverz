@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+Search for an image:
+
+<form enctype='multipart/form-data' action='search_result' method='POST'>
+By filename: <input type='text' name='file'><p>
+By description: <input type='text' name='description'><p>
+<input type='submit'>
+</form>
+
+{% endblock %}
