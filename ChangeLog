@@ -1,3 +1,16 @@
+2014-03-18  Minh Pham
+
+* Add project 6, 7
+	Add image “metadata” uploading, storage, and retrieval: image
+	name, description, etc.
+Change how to store image in image.py
+image is now store as a dictionary with data and other metadata stuff
+
+	Add image metadata search (find image by ...)
+Allow retrieve image through form with proper query
+Search by matching substring in description or file name
+Return search result as a list of dictionary to render with Jinja
+
 2014-03-17  Minh Pham
 	
 * Add project 4
@@ -5,7 +18,7 @@
 Add a list in imageapp/image.py to save filename, therefore can
 know the content type of image and support different image files
 
-* Add project 5
+* Add project 11
 	Write something that prevents denial of services by uploading
 	gigabyte files, or “forever” connections that upload things really
 	slowly. Be sure to write a client-side test. (5 pts.)
