@@ -1,6 +1,7 @@
 import quixote
 from quixote.directory import Directory, export, subdir
-
+import os # for absolute path
+import json
 from . import html, image
 
 class RootDirectory(Directory):
@@ -59,5 +60,14 @@ class RootDirectory(Directory):
     @export(name="add_comment")
     def add_comment(self):
         request = quixote.get_request()
-        imgNum = image.add_comment(request.form)
-        return quixote.redirect("./image?i="+str(imgNum))
+        result = image.add_comment(request.form)
+        print "Ajax: ", request.form
+        return json.dumps(result)
+
+    @export(name="jquery")
+    def jquery(self):
+        # Credit to Xavier Durand Hollis
+        dirname = os.path.dirname(__file__)
+        dirname = os.path.join(dirname,"")
+        jquery_path = os.path.join(dirname,'jquery-1.3.2.min.js')
+        return open(jquery_path).read()

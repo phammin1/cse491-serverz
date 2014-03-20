@@ -26,10 +26,10 @@ AppChoices = ['imageapp', 'altdemo', 'default']
 BuffSize = 128
 
 # timeout for conn.recv (in seconds)
-ConnTimeout = 1
+ConnTimeout = 2
 
 # Max File size to be receive from the server (in byte)
-MaxFileSize = 1000000
+MaxFileSize = 1e8
 
 def main(socketModule = None):
     # for testing main
@@ -37,12 +37,9 @@ def main(socketModule = None):
         socketModule = socket
         # choose app based on system argument
         args = parse_sys_arg()
-        myApp = choose_app(args.a)
+        myApp = choose_app(args.app)
         # choose port number
-        if args.p == 0:
-            port = random.randint(8000,8009)
-        else:
-            port = args.p
+        port = args.port
     else:
         myApp = choose_app('default')
         port = 0
@@ -183,11 +180,11 @@ def make_altdemo_app():
 # return the argument
 def parse_sys_arg():
     parser = argparse.ArgumentParser(description='Run a WSGI server.')
-    parser.add_argument('-a', default = 'default', metavar = 'App',\
-                        choices = AppChoices,\
+    parser.add_argument('-a', '-A', '--app', default = 'default',\
+                        metavar = 'App', choices = AppChoices,\
                         help='The WSGI app to run')
-    parser.add_argument('-p', default=0, type=int, metavar='Port',\
-                            help='Port number to run')
+    parser.add_argument('-p', '--port', default=random.randint(8000,8009),\
+                        type=int, metavar='Port',help='Port number to run')
     return parser.parse_args()
 
 if __name__ == '__main__':

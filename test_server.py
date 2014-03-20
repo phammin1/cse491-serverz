@@ -249,7 +249,7 @@ def test_evil_large_file():
 	'Connection: keep-alive\r\n' +\
 	'Referer: http://arctic.cse.msu.edu:9853/formPost\r\n'+\
 	'Content-Type: multipart/form-data; boundary=---------------------------10925359777073771901781915428\r\n' +\
-	'Content-Length: 1000001\r\n' +\
+	'Content-Length: 100000001\r\n' +\
 	'\r\n' +\
 	'Submit Query\r\n' +\
 	'-----------------------------10925359777073771901781915428\r\n'

@@ -175,12 +175,54 @@ def test_search_result():
     assert 'fav.ico' in conn.sent, 'Wrong info:  %s' % (repr(conn.sent),)
 
 def test_add_comment():
-    reqString = "GET /add_comment HTTP/1.0\r\n\r\n"
+    reqString = "GET /add_comment?user=Minh&comment=Awesome" +\
+        "&time=0 HTTP/1.0\r\n\r\n"
     conn = FakeConnection(reqString)
     handle_conn(conn)
 
-    assert conn.isRedirect(), 'Not a Redirect:  %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    assert "success" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
+    assert "Awesome" in conn.sent, \
+        "Comment wasn't added: %s"  % (repr(conn.sent),)
 
+def test_refresh_comment():
+    reqString = "GET /add_comment?user=&comment=Awesome" +\
+        "&time=0 HTTP/1.0\r\n\r\n"
+    conn = FakeConnection(reqString)
+    handle_conn(conn)
+
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    assert "success" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
+    assert "Awesome" in conn.sent, \
+        "Comment wasn't added: %s"  % (repr(conn.sent),)
+
+def test_evil_comment():
+    reqString = "GET /add_comment?user=Minh&comment=Awesome" +\
+        "&time=abc HTTP/1.0\r\n\r\n"
+    conn = FakeConnection(reqString)
+    handle_conn(conn)
+
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    assert "fail" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
+
+def test_max_time_comment():
+    reqString = "GET /add_comment?user=&comment=Awesome" +\
+        "&time=1e20 HTTP/1.0\r\n\r\n"
+    conn = FakeConnection(reqString)
+    handle_conn(conn)
+
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    assert "success" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
+    assert '"result": []' in conn.sent, \
+        "Result not empty: %s"  % (repr(conn.sent),)
+    
+def test_jquery():
+    reqString = "GET /jquery HTTP/1.0\r\n\r\n"
+    conn = FakeConnection(reqString)
+    handle_conn(conn)
+
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    
 def test_404():
     reqString = "GET /fake HTTP/1.0\r\n\r\n"
     conn = FakeConnection(reqString)

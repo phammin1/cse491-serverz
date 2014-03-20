@@ -1,6 +1,7 @@
 # image handling API
 
 from mimetypes import guess_type # for mapping file extension to mimetype
+from time import time # for time control of the 
 
 images = []
 # store image as dictionary
@@ -157,16 +158,46 @@ def get_metadata(aForm):
     imgDict["file_name"] = img["file_name"]
     imgDict["description"] = img["description"]
     imgDict["commentList"] = img["commentList"]
+    imgDict["time"] = time()
     return imgDict
 
 # Add comment to the image using form
+# Doing AJAX
 def add_comment(aForm):
     imgNum = get_image_number_from_form(aForm)
+    img = images[imgNum]
+    result = {"status": "fail"}
     if 'user' in aForm.keys() and 'comment' in aForm.keys():
-        comment = {"user": aForm["user"], "comment": aForm["comment"]}
-        images[imgNum]["commentList"].append(comment)
+        result["time"] = time()
+        # check if there is an user or comment to add
+        if aForm["user"] != "" and aForm["comment"] != "":
+            comment = {"user": aForm["user"], "comment": aForm["comment"]}
+            comment["time"] = time()
+            img["commentList"].append(comment)
+            comment["time"] = result["time"]
+
+        formTime = 0
+        if "time" in aForm.keys():
+            # check timestamp
+            try:
+                formTime = (float) (aForm["time"].strip())
+            except ValueError:
+                print "Time is not a number: '", aForm["time"],"'"
+                return result
+        else:
+            # No timestamp, probably debugging
+            return result
+        result["status"] = "success"
+        
+        # find all comment that is after the timestamp
+        i = 0
+        for cmt in img["commentList"]:
+            if cmt["time"] > formTime:
+                break
+            i += 1
+        result["result"] = img["commentList"][i:]
     else:
         print 'Evil or stupid: Wrong form keys in add_comment'
-    return imgNum
+    return result
     
 
