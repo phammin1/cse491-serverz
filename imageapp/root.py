@@ -54,4 +54,10 @@ class RootDirectory(Directory):
     def image_list(self):
 	imgDict = image.get_detail_dict()
 	return html.render('image_list.html', imgDict)
-	
+
+
+    @export(name="add_comment")
+    def add_comment(self):
+        request = quixote.get_request()
+        imgNum = image.add_comment(request.form)
+        return quixote.redirect("./image?i="+str(imgNum))

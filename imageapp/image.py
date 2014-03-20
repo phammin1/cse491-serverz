@@ -155,3 +155,15 @@ def get_metadata(aForm):
     imgDict["description"] = img["description"]
     imgDict["commentList"] = img["commentList"]
     return imgDict
+
+# Add comment to the image using form
+def add_comment(aForm):
+    imgNum = get_image_number_from_form(aForm)
+    if 'user' in aForm.keys() and 'comment' in aForm.keys():
+        comment = {"user": aForm["user"], "comment": aForm["comment"]}
+        images[imgNum]["commentList"].append(comment)
+    else:
+        print 'Evil or stupid: Wrong form keys in add_comment'
+    return imgNum
+    
+

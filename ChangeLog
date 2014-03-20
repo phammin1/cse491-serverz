@@ -1,5 +1,10 @@
 2014-03-19  Minh Pham
 
+* Add project 8
+	Add the ability to comment on images.
+Save comment as a list in metadata of images (commentList)
+Submit comment through the image page
+	
 * Add project 5
 	Add a URL that provides a list of images, resized to thumbnails
 	(you can just img size, not actual resizing  that will be a

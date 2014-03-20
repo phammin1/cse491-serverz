@@ -5,5 +5,18 @@ Here is your image:
 <p>
 <img width=40% src='image_raw?i={{index}}'/> <br>
 Image Name: {{file_name}} <br>
-Description: {{description}} <br>
+Description: {{description}} <br> <br>
+Comments: <br>
+{%- for c in commentList -%}
+<font color="blue">{{c["user"]}} </font>: {{c["comment"]}} <br>
+
+{%-endfor-%}
+<br>
+<form action='/add_comment' method='GET'>
+  Your name: <input type='text' name='user'><br>
+  Comment:<br>
+  <textarea rows="4" cols="70" type='text' name='comment'> </textarea><br>
+  <input type='submit' name='submit' value="Add comment"><br></br>
+  <input type='hidden' name='i' value='{{index}}'>
+  </form>
 {% endblock %}
