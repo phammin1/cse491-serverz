@@ -46,10 +46,13 @@ class FakeConnection(object):
         self.is_closed = True
 
     def isOkay(self):
-        return self.header() == okay_header
+        return self.status() == okay_header
 
-    def header(self):
+    def status(self):
         return self.sent.split('\r\n')[0]
+    
+    def headers(self):
+        return self.sent.split('\r\n\r\n')[0]
 
     def bind(self, param):
         (host, port) = param
@@ -114,21 +117,21 @@ def test_404_post():
     conn = FakeConnection("POST /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
-def test_404_fake():
-    conn = FakeConnection("FAKE /fake HTTP/1.0\r\n\r\n")
+def test_404_options():
+    conn = FakeConnection("OPTIONS /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
 def test_404_get():
     conn = FakeConnection("GET /fake HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
 def test_post_submit_multi():
@@ -155,7 +158,7 @@ def test_post_submit_multi():
 	'Content-Disposition: form-data; name="submit"\r\n' +\
 	'\r\n' +\
 	'Submit Query\r\n' +\
-	'-----------------------------10925359777073771901781915428--\r\n'
+	'-----------------------------10925359777073771901781915428\r\n'
     conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
@@ -193,27 +196,27 @@ def test_favicon():
     conn = FakeConnection("GET /favicon.ico HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.isOkay(), 'Not Okay: %s' % (repr(conn.sent),)
+    assert conn.isOkay(), 'Not Okay: %s' % (repr(conn.headers()),)
 
 def test_fake_file():
     conn = FakeConnection("GET /fake.file HTTP/1.0\r\n\r\n")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
     
 def test_evil_empty():
     conn = FakeConnection("")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
 def test_evil_get():
     conn = FakeConnection("GET")
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
 
 # evil content-length:48 (no space)
@@ -227,5 +230,22 @@ def test_evil_header():
     conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
-    assert conn.header() == 'HTTP/1.0 404 Not Found',\
+    assert conn.status() == 'HTTP/1.0 404 Not Found',\
         'Got: %s' % (repr(conn.sent),)
+
+# test a large jpg file to see if it slows down
+def test_large_jpg():
+    reqString = 'GET /large.jpg HTTP/1.0\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn)
+
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
+
+# test image app link
+def test_imageapp_index():
+    reqString = 'GET /imageapp/ HTTP/1.0\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn)
+
+    assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
+    assert 'Upload an image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)

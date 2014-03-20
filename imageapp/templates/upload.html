@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+
+{% block content %}
+Upload a PNG:
+
+<form enctype='multipart/form-data' action='upload_receive' method='POST'>
+Filename: <input type='file' name='file'><p>
+<input type='submit'>
+</form>
+{% endblock %}
