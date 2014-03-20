@@ -154,7 +154,7 @@ def createEnv(conn, defaultEnv):
     if cLen > 0:
         while len(content) < cLen:
             content += conn.recv(BuffSize)
-
+    #print "%s%s" % (repr(reqRaw), repr(content),) # for printing request
     env['wsgi.input'] = StringIO.StringIO(content)
     return env
 

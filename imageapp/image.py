@@ -66,6 +66,9 @@ def create_image_dict(data = "", fileName = "default.png", description = "No des
 
 # create image from a form
 def add_image_from_form(aForm):
+    if 'file' not in aForm.keys() or 'description' not in aForm.keys():
+        print 'Evil arise: Cannot add image from improper form'
+        return
     the_file = aForm['file']
     description = aForm['description']
     print 'Adding image with name:', the_file.base_filename
