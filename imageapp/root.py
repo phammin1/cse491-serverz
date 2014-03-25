@@ -61,7 +61,6 @@ class RootDirectory(Directory):
     def add_comment(self):
         request = quixote.get_request()
         result = image.add_comment(request.form)
-        print "Ajax: ", request.form
         return json.dumps(result)
 
     @export(name="jquery")
