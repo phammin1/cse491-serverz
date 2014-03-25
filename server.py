@@ -10,18 +10,9 @@ from app import make_app # for making an app
 from wsgiref.validate import validator # validating server side
 import argparse # for command line argument
 import envTemplates # for some default environment
-
-# Quixote import
-import quixote
-from quixote.demo.altdemo import create_publisher
-
-# Other import
-import imageapp
+from appChooser import choose_app, AppChoices # choosing app
 
 # Constant
-# Currently implement app for deploy
-AppChoices = ['imageapp', 'altdemo', 'default']
-
 # buffer size for conn.recv
 BuffSize = 128
 
@@ -85,7 +76,8 @@ def handle_connection(conn, host='fake', port=0, anApp=make_app()):
     
     for svrRes in resPage:
         conn.send(svrRes)
-    resPage.close()
+
+    #resPage.close()
     conn.close()
 
 # handle getting data from connection with arbitrary size
@@ -154,27 +146,6 @@ def createEnv(conn, defaultEnv):
     #print "%s%s" % (repr(reqRaw), repr(content),) # for printing request
     env['wsgi.input'] = StringIO.StringIO(content)
     return env
-
-# Choose an app depend on path info in env
-def choose_app(appStr):
-    if appStr == 'imageapp':
-        return make_image_app()
-    elif appStr == 'altdemo':
-        return make_altdemo_app()
-    else:
-        # Default value
-        print 'Using default app...'
-        return make_app()
-    
-# make image app
-def make_image_app():
-    imageapp.setup()
-    imageapp.create_publisher()
-    return quixote.get_wsgi_app()
-
-def make_altdemo_app():
-    create_publisher()
-    return quixote.get_wsgi_app()
 
 # Parse the command line arguments
 # return the argument
