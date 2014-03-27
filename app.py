@@ -36,7 +36,7 @@ def error404():
     ret = Response(tmp, mimetype ='text/html')
     ret.status = '404 Not Found'
     return ret
-
+    
 # Handle all html page request
 def handle_html(environ):
     jEnv = jinja2.Environment(loader=jinja2.FileSystemLoader(JinjaTemplateDir))
@@ -51,9 +51,14 @@ def handle_html(environ):
 
     try:
         tmp = jEnv.get_template(path).render(reqFS)
-        return Response(tmp, mimetype ='text/html')
+        ret = Response(tmp, mimetype ='text/html')
     except jinja2.exceptions.TemplateNotFound:
         return error404()
+
+    if path == '/badRequest.html':
+        ret.status = '400 Bad Request'
+
+    return ret
 
 # Handle resources (.txt, .jpg, .ico,...) request
 def handle_resources(environ):

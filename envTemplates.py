@@ -39,3 +39,23 @@ Error404Env = {\
         'wsgi.run_once' : False,\
         'wsgi.url_scheme' : 'http'
     }
+
+# for bad request type
+def Error400Env(msg = "Evil request"):
+    return {\
+    'REQUEST_METHOD' : 'GET',\
+        'QUERY_STRING' : 'msg=' + msg ,\
+        'PATH_INFO': '/badRequest',\
+        'CONTENT_TYPE' :'application/x-www-form-urlencoded',\
+        'CONTENT_LENGTH' : '0',\
+        'SCRIPT_NAME': '',\
+        'SERVER_NAME' : 'arctic.cse.msu.edu',\
+        'SERVER_PORT' : 'abc',\
+        'wsgi.version' : (1,0),\
+        'wsgi.input' : StringIO.StringIO(''),\
+        'wsgi.errors' : stderr,\
+        'wsgi.multithread' : False,\
+        'wsgi.multiprocess' : False,\
+        'wsgi.run_once' : False,\
+        'wsgi.url_scheme' : 'http'
+    }

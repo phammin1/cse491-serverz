@@ -1,7 +1,9 @@
 import server
 import jinja2
 
-okay_header = 'HTTP/1.0 200 OK' 
+okay_header = 'HTTP/1.0 200 OK'
+
+bad_request_header ='HTTP/1.0 400 Bad Request'
 
 # List of pages have been implemented
 PageList = ['index', 'content', 'form', 'formPost', 'environ']
@@ -46,7 +48,10 @@ class FakeConnection(object):
         self.is_closed = True
 
     def isOkay(self):
-        return self.status() == okay_header
+        return okay_header in self.status()
+
+    def isBad(self):
+        return bad_request_header in self.status()
 
     def status(self):
         return self.sent.split('\r\n')[0]
@@ -144,7 +149,7 @@ def test_post_submit_multi():
 	'Connection: keep-alive\r\n' +\
 	'Referer: http://arctic.cse.msu.edu:9853/formPost\r\n'+\
 	'Content-Type: multipart/form-data; boundary=---------------------------10925359777073771901781915428\r\n' +\
-	'Content-Length: 420\r\n' +\
+	'Content-Length: 418\r\n' +\
 	'\r\n' +\
 	'-----------------------------10925359777073771901781915428\r\n' +\
 	'Content-Disposition: form-data; name="firstname"\r\n' +\
@@ -209,15 +214,15 @@ def test_evil_empty():
     conn = FakeConnection("")
     server.handle_connection(conn)
 
-    assert conn.status() == 'HTTP/1.0 404 Not Found',\
-        'Got: %s' % (repr(conn.sent),)
+    assert conn.isBad(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Plain evil' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 def test_evil_get():
     conn = FakeConnection("GET")
     server.handle_connection(conn)
 
-    assert conn.status() == 'HTTP/1.0 404 Not Found',\
-        'Got: %s' % (repr(conn.sent),)
+    assert conn.isBad(), 'Got: %s' % (repr(conn.sent),)
+    assert 'Plain evil' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 # evil content-length:48 (no space)
 def test_evil_header():
@@ -230,22 +235,55 @@ def test_evil_header():
     conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
-    assert conn.status() == 'HTTP/1.0 404 Not Found',\
-        'Got: %s' % (repr(conn.sent),)
+    assert conn.isBad(), 'Got: %s' % (repr(conn.sent),)
+    assert 'wrong headers' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+
+# test a large file to see if it reject
+def test_evil_large_file():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Host: arctic.cse.msu.edu:9853\r\n' +\
+	'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131030 Firefox/17.0 Iceweasel/17.0.10\r\n' +\
+	'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n' +\
+	'Accept-Language: en-US,en;q=0.5\r\n' +\
+	'Accept-Encoding: gzip, deflate\r\n' +\
+	'Connection: keep-alive\r\n' +\
+	'Referer: http://arctic.cse.msu.edu:9853/formPost\r\n'+\
+	'Content-Type: multipart/form-data; boundary=---------------------------10925359777073771901781915428\r\n' +\
+	'Content-Length: 100000001\r\n' +\
+	'\r\n' +\
+	'Submit Query\r\n' +\
+	'-----------------------------10925359777073771901781915428\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn)
+
+    assert conn.isBad(), 'Got: %s' % (repr(conn.headers()),)
+    assert 'too big' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
+
+# test connection time out
+def test_conn_timeout():
+    reqString = 'POST /submit HTTP/1.1\r\n' +\
+	'Host: arctic.cse.msu.edu:9853\r\n' +\
+	'User-Agent: Mozilla/5.0 (X11; Linux x86_64; rv:17.0) Gecko/20131030 Firefox/17.0 Iceweasel/17.0.10\r\n' +\
+	'Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8\r\n' +\
+	'Accept-Language: en-US,en;q=0.5\r\n' +\
+	'Accept-Encoding: gzip, deflate\r\n' +\
+	'Connection: keep-alive\r\n' +\
+	'Referer: http://arctic.cse.msu.edu:9853/formPost\r\n'+\
+	'Content-Type: multipart/form-data; boundary=---------------------------10925359777073771901781915428\r\n' +\
+	'Content-Length: 891\r\n' +\
+	'\r\n' +\
+	'Submit Query\r\n' +\
+	'-----------------------------10925359777073771901781915428\r\n'
+    conn = FakeConnection(reqString)
+    server.handle_connection(conn)
+
+    assert conn.isBad(), 'Got: %s' % (repr(conn.headers()),)
+    assert 'Timeout' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)
 
 # test a large jpg file to see if it slows down
 def test_large_jpg():
-    reqString = 'GET /large.jpg HTTP/1.0\r\n'
+    reqString = 'GET /large.jpg HTTP/1.0\r\n\r\n'
     conn = FakeConnection(reqString)
     server.handle_connection(conn)
 
     assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
-
-# test image app link
-def test_imageapp_index():
-    reqString = 'GET /imageapp/ HTTP/1.0\r\n'
-    conn = FakeConnection(reqString)
-    server.handle_connection(conn)
-
-    assert conn.isOkay(), 'Got: %s' % (repr(conn.headers()),)
-    assert 'Upload an image' in conn.sent, 'Wrong page: %s' % (repr(conn.sent),)

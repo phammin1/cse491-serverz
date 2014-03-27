@@ -1,7 +1,9 @@
 {% extends "base.html" %}
 
 {% block content %}
-<a href='/imageapp/upload'>Upload an image</a> |
-<a href='/imageapp/image'>Show most recent image</a> <br>
-<img width=40% src='image_raw?special=latest'/>
+<a href='/upload'>Upload an image</a> |
+<a href='/image?i=latest'>Show most recent image</a> |
+<a href='/search'>Search an image</a> |
+<a href='/image_list'>List of images</a><br>
+<img width=40% src='image_raw?q=latest'/>
 {% endblock %}

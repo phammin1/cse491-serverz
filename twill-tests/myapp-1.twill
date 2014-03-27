@@ -1,0 +1,30 @@
+go /
+code 200
+
+go /file
+code 200
+
+go /content
+code 200
+
+go /image
+code 200
+
+go /environ
+code 200
+
+go /form
+code 200
+
+go /formPost
+code 200
+
+go /form
+fv 1 firstname Minh
+fv 1 lastname Pham
+submit
+
+find "Minh Pham"
+
+go /fake
+code 404

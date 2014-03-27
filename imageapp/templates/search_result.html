@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+
+{% block content %}
+Search results:
+<p>
+  {% if results is defined-%}
+  {%- for i in results -%}
+  Image: <a href=image?i={{i["index"]}}>{{i["file_name"]}}</a>;
+Description: {{i["description"]}} <br>
+  {%-endfor-%}
+  {%-else-%} No image found
+  {%-endif-%}
+{% endblock %}
