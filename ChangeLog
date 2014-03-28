@@ -1,4 +1,22 @@
-2014-06-25  Minh Pham
+2014-03-28  Minh Pham
+* Add project 22 (count 9)
+	Make a thumbnail list using server-side resizing on the fly (in
+	Python code, using PIL or some other image manipulation
+	library). The distinguishing feature here should be that large
+	images are not downloaded to the browser and resized there (as
+	would happen if you used image attributes; see #5).
+I used Pillow (a PIL fork with JPEG support) to generate image thumbnail
+The thumbnail is saved in the image dictionary like a metadata and can be
+reference with /image_thumbnail?i=
+
+* Add project 23 (count 8)
+	Write a URL handler so that each image is referred to by its
+	number, e.g. /image_raw/10; make it so that going to the latest
+	image in your imageapp redirects to the right image number. (5
+	pts; app_feature)
+Already implemented from previous version with /image?i=
+
+2014-03-25  Minh Pham
 
 Integrate chat and quote app
 Add time showing in human readable format to add comment field
