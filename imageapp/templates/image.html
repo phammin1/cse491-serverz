@@ -21,8 +21,9 @@ $(document).ready(function() {
              function(data) {
                timestamp = data.time;
                $.each( data.result, function( i, item ) {
-                  var myStr = "<font color='blue'>" + item.user + " : "
-	+ "</font>" + item.comment + "<br>";
+                  var myStr = "<font color='blue'>" + item.user +
+	 "</font>" + " : " + item.comment +
+         "<font color='gray'> " + item.timeHumanReadable + "</font><br>";
                   $("#commentList").append(myStr);
                });
             });
@@ -40,7 +41,8 @@ Description: {{description}} <br> <br>
 Comments: <br>
 <p id="commentList">
 {%- for c in commentList -%}
-<font color="blue">{{c["user"]}} </font>: {{c["comment"]}} <br>
+<font color="blue">{{c["user"]}} </font>: {{c["comment"]}}
+<font color="gray"> {{c["timeHumanReadable"]}} </font> <br>
 {%-endfor-%}
 </p>
 <br>

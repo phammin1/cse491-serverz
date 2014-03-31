@@ -1,13 +1,16 @@
 # image handling API
 
 from mimetypes import guess_type # for mapping file extension to mimetype
-from time import time # for time control of the 
+from time import time, strftime # for time control of the comment
 
-images = []
-# store image as dictionary
+# Time string formatter to make time look nice
+TimeFormatter = "%b %d at %H:%M"
+
+# store image as list
 # an image dictionary is expected to have the following
 # data, filename, description
 # best to used get default image
+images = []
 
 # Add an image using data and name of image file
 # param img an image dictionary
@@ -171,10 +174,12 @@ def add_comment(aForm):
         result["time"] = time()
         # check if there is an user or comment to add
         if aForm["user"] != "" and aForm["comment"] != "":
-            comment = {"user": aForm["user"], "comment": aForm["comment"]}
+            comment = {"user": aForm["user"]}
+            comment["comment"] = aForm["comment"].strip()
             comment["time"] = time()
             img["commentList"].append(comment)
             comment["time"] = result["time"]
+            comment["timeHumanReadable"] = strftime(TimeFormatter)
 
         formTime = 0
         if "time" in aForm.keys():

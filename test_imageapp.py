@@ -205,6 +205,14 @@ def test_evil_comment():
     assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
     assert "fail" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
 
+def test_empty_comment():
+    reqString = "GET /add_comment HTTP/1.0\r\n\r\n"
+    conn = FakeConnection(reqString)
+    handle_conn(conn)
+
+    assert conn.isOkay(), 'Not Okay:  %s' % (repr(conn.sent),)
+    assert "fail" in conn.sent, 'Fail:  %s' % (repr(conn.sent),)
+
 def test_max_time_comment():
     reqString = "GET /add_comment?user=&comment=Awesome" +\
         "&time=1e20 HTTP/1.0\r\n\r\n"
