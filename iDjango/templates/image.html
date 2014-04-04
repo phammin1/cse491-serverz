@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+{% block head %}
+<style type="text/css">
+   #commentList {
+     height: 250px;
+     width: 600px;   
+     border: 1px solid;
+     padding: 5px;
+     overflow: auto;
+   }
+</style>
+<script type='text/javascript'>
+$(document).ready(function() {
+        timestamp = {{time}};
+
+	$("#submit").click(function(e) {
+            e.preventDefault();
+            $.getJSON("/add_comment",
+             { user: $("#user").val(), comment: $("#comment").val(),
+	i:{{index}}, time: timestamp },
+             function(data) {
+               timestamp = data.time;
+               $.each( data.result, function( i, item ) {
+                  var myStr = "<font color='blue'>" + item.user +
+	 "</font>" + " : " + item.comment +
+         "<font color='gray'> " + item.timeHumanReadable + "</font><br>";
+                  $("#commentList").append(myStr);
+               });
+            });
+	});
+});
+</script>
+{% endblock %}
+
+{% block content %}
+Here is your image:
+<p>
+<img width=40% src='/image_raw?i={{index}}'/> <br>
+Image Name: {{file_name}} <br>
+Description: {{description}} <br> <br>
+Comments: <br>
+<p id="commentList">
+{% for c in commentList %}
+<font color="blue">{{c.user}} </font>: {{c.comment}}
+<font color="gray"> {{c.timeHumanReadable}} </font> <br>
+{% endfor %}
+</p>
+<br>
+<form enctype="multipart/form-data">
+  Your name: <input type="text" name="user" id="user"><br>
+  Comment:<br>
+  <textarea rows="4" cols="70" type="text" name="comment" id="comment">
+  </textarea><br>
+  <input type="submit" name="submit" value="Add comment" id="submit"><br></br>
+  </form>
+{% endblock %}

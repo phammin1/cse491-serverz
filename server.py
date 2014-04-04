@@ -17,7 +17,7 @@ from appChooser import choose_app, AppChoices # choosing app
 BuffSize = 128
 
 # timeout for conn.recv (in seconds)
-ConnTimeout = 2
+ConnTimeout = 3
 
 # Max File size to be receive from the server (in byte)
 MaxFileSize = 1e8
@@ -47,11 +47,15 @@ def main(socketModule = None):
     s.listen(5)                 # Now wait for client connection.
 
     print 'Entering infinite loop; hit CTRL-C to exit'
-    while True:
-        # Establish connection with client.    
-        conn, (client_host, client_port) = s.accept()
-        print 'Got connection from', client_host, client_port
-        handle_connection(conn, host, port, myApp)
+
+    try:
+        while True:
+            # Establish connection with client.    
+            conn, (client_host, client_port) = s.accept()
+            print 'Got connection from', client_host, client_port
+            handle_connection(conn, host, port, myApp)
+    except KeyboardInterrupt:
+        print "\nExiting server...\n"
 
 # raise error when time out
 def signal_handler(signum, frame):
@@ -85,14 +89,15 @@ def handle_connection(conn, host='fake', port=0, anApp=make_app()):
 def getData(conn, defaultEnv):
     # signal is used to control execution time
     signal.signal(signal.SIGALRM, signal_handler)
-    signal.setitimer(signal.ITIMER_REAL, ConnTimeout, ConnTimeout) # set timeout
-
+    signal.alarm(ConnTimeout) # set timeout
+    
     env = envTemplates.Error404Env
     try:
         env = createEnv(conn, defaultEnv)
     except Exception, msg:
         print "Connection Timeout:", msg
         env = envTemplates.Error400Env("Timeout")
+
     signal.alarm(0) # turn off signal
 
     return env

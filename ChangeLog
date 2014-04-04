@@ -1,3 +1,11 @@
+2014-04-03  Minh Pham
+* Add project 1 (count 10)
+	Reimplement the imageapp functionality (minus the silly JavaScript) in your own app.py, or Django or flask.
+The django app is implement in iDjango folder
+It can be run using "python server.py -a -django"
+All projects up to date is successfully implemented in django app:
+	Project 22, 23, 12, 8, 5, 4, 6, 7
+
 2014-03-28  Minh Pham
 * Add project 22 (count 9)
 	Make a thumbnail list using server-side resizing on the fly (in

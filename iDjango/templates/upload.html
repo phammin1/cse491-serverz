@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+
+{% block content %}
+Upload a PNG:
+
+<form enctype='multipart/form-data' action='/upload_receive/' method='POST'>
+  {% csrf_token %}
+Filename: <input type='file' name='file'><p>
+Description: <input type='text' name='description'><p>
+<input type='submit'>
+</form>
+{% endblock %}

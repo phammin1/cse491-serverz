@@ -13,9 +13,22 @@ import imageapp
 from quotes.apps import QuotesApp
 from chat.apps import ChatApp
 
+# For django path environment
+import os
+import sys
+
 # Currently implement app for deploy
 AppChoices = ['imageapp', 'i', 'altdemo', 'a', 'quotes', 'q',\
-                  'chat', 'c', 'default']
+                  'chat', 'c', 'django', 'd', 'default']
+
+# Django app directory
+DjangoDir = "iDjango"
+
+# Django internal directory with settings, urls..
+DjangoInDir = "core"
+
+# Django setting file
+DjangoSettingFile = "settings"
 
 # Choose an app depend on path info in env
 def choose_app(appStr):
@@ -27,6 +40,8 @@ def choose_app(appStr):
         return QuotesApp('quotes/quotes.txt', 'quotes/html')
     elif appStr == 'chat' or appStr == 'c':
         return ChatApp('chat/html')
+    elif appStr == 'django' or appStr == 'd':
+        return make_django_app()
     else:
         # Default value
         print 'Using default app...'
@@ -41,3 +56,13 @@ def make_image_app():
 def make_altdemo_app():
     create_publisher()
     return quixote.get_wsgi_app()
+
+def make_django_app():
+    # Credit to Brian Jurgess
+    settingDir = DjangoDir + '.' + DjangoInDir + '.' + DjangoSettingFile
+    os.environ.setdefault("DJANGO_SETTINGS_MODULE", settingDir)
+    from django.core.wsgi import get_wsgi_application
+    sys.path.append(os.path.join(os.path.dirname(__file__), DjangoDir))
+
+    return get_wsgi_application()
+    
