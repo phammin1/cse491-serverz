@@ -1,3 +1,11 @@
+2014-04-06  Minh Pham
+* Add project 16 (count 11)
+	Add data persistence in sqlite or MySQL or PostgreSQL
+Data persistance is done through Django sqlite - image and comment database 
+All projects up to date is successfully reimplemented using database
+It would technically work for MySQL, NoSQL,... as Django has support for
+these as well, all you have to do is to change core.settings.py 
+
 2014-04-03  Minh Pham
 * Add project 1 (count 10)
 	Reimplement the imageapp functionality (minus the silly JavaScript) in your own app.py, or Django or flask.

@@ -36,6 +36,7 @@ INSTALLED_APPS = (
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'myapp',
 )
 
 MIDDLEWARE_CLASSES = (
@@ -67,7 +68,7 @@ DATABASES = {
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'US/Eastern'
 
 USE_I18N = True
 
@@ -90,3 +91,6 @@ TEMPLATE_DIRS = (
     os.path.join(BASE_DIR, 'templates/'),
     )
 
+
+# Directory for saving file to server
+MEDIA_ROOT = os.path.join(BASE_DIR, 'media/')

@@ -11,19 +11,19 @@
 </style>
 <script type='text/javascript'>
 $(document).ready(function() {
-        timestamp = {{time}};
-
+        var timestamp = {{time}};
 	$("#submit").click(function(e) {
             e.preventDefault();
-            $.getJSON("/add_comment",
+            $.get("/add_comment",
              { user: $("#user").val(), comment: $("#comment").val(),
-	i:{{index}}, time: timestamp },
-             function(data) {
+	imageId:{{id}}});
+            $.getJSON("/ajax_comment", {time: timestamp, imageId:{{id}}},
+            function(data) {
                timestamp = data.time;
-               $.each( data.result, function( i, item ) {
+               $.each( data.results, function( i, item ) {
                   var myStr = "<font color='blue'>" + item.user +
 	 "</font>" + " : " + item.comment +
-         "<font color='gray'> " + item.timeHumanReadable + "</font><br>";
+         "<font color='gray'> " + item.datetime + "</font><br>";
                   $("#commentList").append(myStr);
                });
             });
@@ -35,14 +35,14 @@ $(document).ready(function() {
 {% block content %}
 Here is your image:
 <p>
-<img width=40% src='/image_raw?i={{index}}'/> <br>
-Image Name: {{file_name}} <br>
+<img width=40% src='/image_raw?i={{id}}'/> <br>
+Image Name: {{name}} <br>
 Description: {{description}} <br> <br>
 Comments: <br>
 <p id="commentList">
 {% for c in commentList %}
 <font color="blue">{{c.user}} </font>: {{c.comment}}
-<font color="gray"> {{c.timeHumanReadable}} </font> <br>
+<font color="gray"> {{c.datetime|date}} </font> <br>
 {% endfor %}
 </p>
 <br>
@@ -51,6 +51,8 @@ Comments: <br>
   Comment:<br>
   <textarea rows="4" cols="70" type="text" name="comment" id="comment">
   </textarea><br>
-  <input type="submit" name="submit" value="Add comment" id="submit"><br></br>
+  <input type="submit" name="submit" value="Add comment" id="submit">
   </form>
+<br>
+
 {% endblock %}

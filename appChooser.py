@@ -24,11 +24,8 @@ AppChoices = ['imageapp', 'i', 'altdemo', 'a', 'quotes', 'q',\
 # Django app directory
 DjangoDir = "iDjango"
 
-# Django internal directory with settings, urls..
-DjangoInDir = "core"
-
 # Django setting file
-DjangoSettingFile = "settings"
+DjangoSettingFile = "core.settings"
 
 # Choose an app depend on path info in env
 def choose_app(appStr):
@@ -59,7 +56,7 @@ def make_altdemo_app():
 
 def make_django_app():
     # Credit to Brian Jurgess
-    settingDir = DjangoDir + '.' + DjangoInDir + '.' + DjangoSettingFile
+    settingDir = DjangoDir + '.' + DjangoSettingFile
     os.environ.setdefault("DJANGO_SETTINGS_MODULE", settingDir)
     from django.core.wsgi import get_wsgi_application
     sys.path.append(os.path.join(os.path.dirname(__file__), DjangoDir))

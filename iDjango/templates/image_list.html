@@ -22,8 +22,8 @@ Here is the list of image:
     <tr>
   {% for i in results %}
   <td>
-<img width=70 height=70 src='/image_thumbnail?i={{i.index}}'/> <br>
-Name: <a href='/image/{{i.index}}'>{{i.file_name}}</a> </br>
+<img width=70 height=70 src='/image_thumbnail?i={{i.id}}'/> <br>
+Name: <a href='/image/{{i.id}}'>{{i.name}}</a> </br>
 Description: {{i.description}} <br>
 </td>
   {% if forloop.counter|divisibleby:"4" %} </tr><tr> {% endif %}

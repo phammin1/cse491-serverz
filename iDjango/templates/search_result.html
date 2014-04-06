@@ -5,7 +5,7 @@ Search results:
 <p>
   {% if results %}
   {% for i in results %}
-  Image: <a href=/image/{{i.index}}>{{i.file_name}}</a>;
+  Image: <a href=/image/{{i.id}}>{{i.name}}</a>;
 Description: {{i.description}} <br>
   {% endfor %}
   {% else %} No image found
