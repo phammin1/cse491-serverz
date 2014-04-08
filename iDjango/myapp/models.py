@@ -11,8 +11,6 @@ DefaultThumbnail = "image/no_preview.png"
 ThumbnailSize = 70, 70
 
 class MyImageManager(models.Manager):
-    def count(self):
-        return len(self.all().values('id'))
 
     def meta(self):
         return self.values("id", "name", "description")

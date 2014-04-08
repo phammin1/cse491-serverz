@@ -5,6 +5,7 @@ from time import time, strftime # for time control of the comment
 from PIL import ImageFile, Image # for generating thumbnail
 import os # for getting absolute path
 from StringIO import StringIO # for buffer
+from sqlite import query
 
 # Time string formatter to make time look nice
 TimeFormatter = "%b %d at %H:%M"
@@ -25,8 +26,16 @@ images = []
 # param img an image dictionary
 def add_image(img):        
     images.append(img)
+    query.insert(img)
     return len(images)
 
+# Load image from dictionary from database
+# Do not save to databse
+def load_image_from_form(aDict):
+    img = create_image_dict(data = aDict["data"], fileName = aDict["file_name"],
+                                       description = aDict["description"])
+    images.append(img)
+    
 # get image and its type
 def get_image(num):
     img = images[num]
@@ -230,10 +239,10 @@ def generate_thumbnail(data):
     try:
         p.feed(data)
         img = p.close()
-    except IOError:
-        print "Cannot generate image thumbnail"
+    except IOError, msg:
+        print "Cannot generate image thumbnail: IOError:", msg
     except TypeError, msg:
-        print "Thumbnail fail, probably ico file: ", msg
+        print "Thumbnail fail, probably ico file: TypeError:", msg
 
     # if cannot read the image file using PIL
     if img == None:

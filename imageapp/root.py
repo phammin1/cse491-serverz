@@ -11,8 +11,8 @@ class RootDirectory(Directory):
     def index(self):
         return html.render('index.html')
 
-    @export(name='upload')
-    def upload(self):
+    @export(name='upload_image')
+    def upload_image(self):
         return html.render('upload.html')
 
     @export(name='upload_receive')

@@ -5,6 +5,7 @@ from quixote.publish import Publisher
 # this imports the class RootDirectory from the file 'root.py'
 from .root import RootDirectory
 from . import html, image
+from sqlite import query
 
 def create_publisher():
      p = Publisher(RootDirectory(), display_exceptions='plain')
@@ -13,7 +14,8 @@ def create_publisher():
  
 def setup():                            # stuff that should be run once.
     html.init_templates()
-    add_default_image()
+    #add_default_image()
+    loadDb()
 
 def teardown():                         # stuff that should be run once.
     pass
@@ -40,3 +42,9 @@ def add_default_image():
     image.add_image(img)
     commentForm = {'i': 2, 'user': 'Minh', 'comment': 'Have you play SuperTux?'}
     image.add_comment(commentForm)
+
+# Load data from database
+def loadDb():
+     imageDictList = query.loadAll()
+     for imgDict in imageDictList:
+          image.load_image_from_form(imgDict)

@@ -2,7 +2,7 @@
 # Minh Pham
 # CSE 491
 
-from app import make_app # for making an app
+from app import make_app # for making a simple app
 
 # Quixote import
 import quixote
@@ -19,7 +19,7 @@ import sys
 
 # Currently implement app for deploy
 AppChoices = ['imageapp', 'i', 'altdemo', 'a', 'quotes', 'q',\
-                  'chat', 'c', 'django', 'd', 'default']
+                  'chat', 'c', 'django', 'cookie', 'ck', 'd', 'default']
 
 # Django app directory
 DjangoDir = "iDjango"
@@ -39,6 +39,9 @@ def choose_app(appStr):
         return ChatApp('chat/html')
     elif appStr == 'django' or appStr == 'd':
         return make_django_app()
+    elif appStr == 'cookie' or appStr == 'ck':
+        import cookieapp
+        return cookieapp.wsgi_app
     else:
         # Default value
         print 'Using default app...'
