@@ -239,10 +239,8 @@ def generate_thumbnail(data):
     try:
         p.feed(data)
         img = p.close()
-    except IOError, msg:
-        print "Cannot generate image thumbnail: IOError:", msg
-    except TypeError, msg:
-        print "Thumbnail fail, probably ico file: TypeError:", msg
+    except Exception, msg:
+        print "Can't generate thumbnail:", msg
 
     # if cannot read the image file using PIL
     if img == None:
