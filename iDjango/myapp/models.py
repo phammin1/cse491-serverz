@@ -36,10 +36,8 @@ class MyImage(models.Model):
         try:
             p.feed(self.image.read())
             img = p.close()
-        except IOError:
-            print "Cannot generate image thumbnail"
-        except TypeError, msg:
-            print "Thumbnail fail, probably ico file: ", msg
+        except Exception, msg:
+            print "Cannot generate thumbnail for ", self.name, ":",  msg
 
         fp = None
         # if cannot read the image file using PIL
