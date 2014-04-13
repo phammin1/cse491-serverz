@@ -46,6 +46,14 @@ class RootDirectory(Directory):
         response.set_content_type(contentType)
         return img
 
+    @export(name='image_thumbnail')
+    def image_thumbnail(self):
+        request = quixote.get_request()
+        img, contentType = image.get_thumbnail_from_form(request.form)
+        response = quixote.get_response()
+        response.set_content_type(contentType)
+        return img
+    
     @export(name='image_detail')
     def image_detail(self):
         request = quixote.get_request()

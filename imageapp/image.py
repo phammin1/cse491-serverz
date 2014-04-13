@@ -2,9 +2,18 @@
 
 from mimetypes import guess_type # for mapping file extension to mimetype
 from time import time, strftime # for time control of the comment
+from PIL import ImageFile, Image # for generating thumbnail
+import os # for getting absolute path
+from StringIO import StringIO # for buffer
 
 # Time string formatter to make time look nice
 TimeFormatter = "%b %d at %H:%M"
+
+# Default no preview thumbnail (default format is png)
+DefaultThumbnail = "no_preview.png"
+
+# Default Thumbnail size
+ThumbnailSize = 70, 70
 
 # store image as list
 # an image dictionary is expected to have the following
@@ -56,6 +65,11 @@ def get_image_from_form(aForm):
     imgNum = get_image_number_from_form(aForm)
     return get_image(imgNum)
 
+# get image thumbnail from a form with query
+def get_thumbnail_from_form(aForm):
+    imgNum = get_image_number_from_form(aForm)
+    return images[imgNum]["thumbnail"], "image/png"
+
 # get last image number:
 def get_latest_num():
     return len(images)-1
@@ -66,6 +80,8 @@ def create_image_dict(data = "", fileName = "default.png", description = "No des
     img["file_name"] = fileName
     img["description"] = description
     img["commentList"] = []
+    img["thumbnail"] = generate_thumbnail(data)
+    
     return img
 
 # create image from a form
@@ -204,5 +220,31 @@ def add_comment(aForm):
     else:
         print 'Evil or stupid: Wrong form keys in add_comment'
     return result
-    
 
+# Generate thumbnail using data
+# return: a file pointer like object
+def generate_thumbnail(data):
+    # read data into PIL image
+    p = ImageFile.Parser()
+    img = None
+    try:
+        p.feed(data)
+        img = p.close()
+    except IOError:
+        print "Cannot generate image thumbnail"
+    except TypeError, msg:
+        print "Probably ico file: ", msg
+
+    # if cannot read the image file using PIL
+    if img == None:
+        # generate a default thumbnail
+        dirname = os.path.join(os.path.dirname(__file__),"")
+        thumbnail_path = os.path.join(dirname, DefaultThumbnail)
+        return open(thumbnail_path, 'rb').read()
+    else:
+        # generate an actual thumbnail
+        fp = StringIO()
+        img.thumbnail(ThumbnailSize, Image.ANTIALIAS)
+        img.save(fp, format="PNG")
+        fp.seek(0)
+        return fp.read()
